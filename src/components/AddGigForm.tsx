@@ -1,6 +1,5 @@
 //src\components\AddGigForm.tsx
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { GigFormInput } from "@/lib/types";
 import { addGig } from '@/lib/services/firestore';
 

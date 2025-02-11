@@ -90,7 +90,7 @@ function Marker({ map, position, onClick }: {
 
 interface MapViewProps {
   gigs: Gig[];
-  selectedGig: Gig | null;
+  
   onGigSelect: (gig: Gig | null) => void;
   userLocation: google.maps.LatLngLiteral | null;
 }
@@ -98,7 +98,7 @@ interface MapViewProps {
 // Default center (UK)
 const defaultCenter = { lat: 54.093409, lng: -2.89479 };
 
-export function MapView({ gigs, selectedGig, onGigSelect, userLocation }: MapViewProps) {
+export function MapView({ gigs, onGigSelect, userLocation }: MapViewProps) {
   console.log(`MapView received ${gigs.length} gigs`);
   // Log unique venues to check for duplicates
   const uniqueVenues = new Set(gigs.map(gig => gig.venueName));

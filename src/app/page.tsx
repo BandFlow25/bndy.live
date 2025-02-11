@@ -90,7 +90,6 @@ export default function Home() {
       />
       <MapView
         gigs={filteredGigs}
-        selectedGig={selectedGig}
         onGigSelect={setSelectedGig}
         userLocation={userLocation}
       />
