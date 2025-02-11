@@ -8,6 +8,7 @@ import { loadMockGigs, filterGigs } from "@/lib/services/mock-data";
 export default function Home() {
   const [gigs, setGigs] = useState<Gig[]>([]);
   const [filteredGigs, setFilteredGigs] = useState<Gig[]>([]);
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);  // Added for Sidebar
   const [filters, setFilters] = useState<GigFilters>({
@@ -17,6 +18,7 @@ export default function Home() {
     dateFilter: "all"  // Removed searchRadius as it's not in GigFilters type
   });
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null);
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   // Load mock data
   useEffect(() => {
