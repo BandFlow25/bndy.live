@@ -2,20 +2,147 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 24 95% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 24 95% 53%;
+    --radius: 1.5rem;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .animate-fade-in {
+    animation: fadeIn 1s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .logo-text {
+    @apply relative inline-flex items-center;
+    text-shadow: 0 0 10px var(--primary);
+  }
+
+  .logo-text::after {
+    content: '';
+    @apply absolute -inset-0.5 bg-primary/20 blur rounded-lg;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 0.1;
+    }
+  }
+}
+
+@layer utilities {
+  @supports (-webkit-touch-callout: none) {
+    .min-h-screen {
+      min-height: -webkit-fill-available;
+    }
+  }
+}
+
+
+
+
+/* Sidebar Styles - Implementing Guide Specs */
+
+/* Base Panel Animation */
+.side-panel {
+  transition: transform 300ms ease-in-out;
+}
+
+/* Initial States */
+.side-panel-left {
+  transform: translateX(-100%);
+}
+
+.side-panel-right {
+  transform: translateX(100%);
+}
+
+/* Open State */
+.side-panel-open {
+  transform: translateX(0);
+}
+
+/* Panel Base Styling */
+.side-panel {
+  @apply fixed z-50 bg-background/95 backdrop-blur-sm border-border shadow-lg;
+}
+
+/* Form Controls */
+.form-input, .form-select {
+  @apply w-full rounded-md border border-input bg-background px-3 py-2;
+  @apply text-sm focus-visible:ring-2 focus-visible:ring-ring;
+  @apply transition-colors duration-200;
+}
+
+/* Hover Effects */
+.gig-list-item {
+  @apply bg-muted/50 hover:bg-muted transition-colors duration-200;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .side-panel {
+    width: 100%;
+  }
+}
+
+@media (min-width: 641px) {
+  .side-panel {
+    width: 400px;
+  }
+}
+
+/* Animation States */
+@keyframes panel-fade-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes panel-fade-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-10px); }
 }
