@@ -1,30 +1,23 @@
-const express = require("express");
-const next = require("next");
-const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const express = require("express");
 
-const dev = process.env.NODE_ENV !== "production";
-const app = next({ dev });
-const handle = app.getRequestHandler();
+const app = express();
 
-// Load SSL certificates
-const httpsOptions = {
-  key: fs.readFileSync(path.join(__dirname, "localhost-key.pem")),
-  cert: fs.readFileSync(path.join(__dirname, "localhost.pem")),
-};
+if (process.env.NODE_ENV !== "production") {
+    // Only use HTTPS locally
+    const https = require("https");
+    const options = {
+        key: fs.readFileSync(path.join(__dirname, "localhost-key.pem")),
+        cert: fs.readFileSync(path.join(__dirname, "localhost.pem")),
+    };
 
-app.prepare().then(() => {
-  const server = express();
-
-  // Handle all requests with Next.js
-  server.all("*", (req, res) => {
-    return handle(req, res);
-  });
-
-  // Start HTTPS server on port 3000
-  https.createServer(httpsOptions, server).listen(3000, (err) => {
-    if (err) throw err;
-    console.log("🚀 Server running on **https://localhost:3000**");
-  });
-});
+    https.createServer(options, app).listen(3000, () => {
+        console.log("Server running on https://localhost:3000");
+    });
+} else {
+    // Production uses Vercel’s built-in HTTPS
+    app.listen(3000, () => {
+        console.log("Server running on standard port 3000 (Vercel handles HTTPS)");
+    });
+}
