@@ -1,33 +1,57 @@
 // src/lib/types.ts
 
-// Main Gig interface for events
-export interface Gig {
+
+export interface BaseEvent {
   id: string;
-  bandName: string;
-  venueName: string;
+  name: string;
   date: string;
-  time: string;
+  startTime: string;
+  endTime?: string;
+  venueId: string;
+  venueName: string;  // Denormalized for convenience
   location: {
     lat: number;
     lng: number;
   };
-  venueAddress: string;
   ticketPrice?: string;
-  ticketLink?: string;
-  genre?: string;
-  description?: string;
+  ticketUrl?: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
-  type: 'gig';
+  updatedAt: string;
 }
 
-export type GigFormInput = Omit<Gig, 'id' | 'status' | 'createdAt' | 'type'>;
-   
+export interface BandEvent extends BaseEvent {
+  bandId: string;
+  source: 'bndy.core';
+}
+
+export interface LiveEvent extends BaseEvent {
+  artistIds: string[];  // Array of nonband IDs
+  source: 'bndy.live';
+}
+
+export type Event = BandEvent | LiveEvent;
+
+// Non-bndy.core bands
+// Update the NonBand interface (all fields that can exist in bf_nonbands)
+export interface NonBand {
+  id: string;
+  name: string;
+  nameVariants?: string[];
+  facebookUrl?: string;
+  instagramUrl?: string;
+  spotifyUrl?: string;
+  websiteUrl?: string;
+  genres?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Venue types
 export interface Venue {
   id: string;
   name: string;
-  nameVariants?: string[];  // Other ways this venue has been written
+  nameVariants?: string[];
   googlePlaceId?: string;
   location: {
     lat: number;
@@ -39,7 +63,9 @@ export interface Venue {
   createdAt: string;
   updatedAt: string;
 }
-export interface GigFilters {
+
+// Filter types
+export interface EventFilters {
   searchTerm: string;
   genre?: string;
   ticketType: 'all' | 'free' | 'paid';
@@ -47,11 +73,22 @@ export interface GigFilters {
   dateFilter: 'all' | 'today' | 'week' | 'month';
 }
 
-// Location related types
 export interface LocationFilter {
   searchRadius: number;
   center?: {
     lat: number;
     lng: number;
   };
+}
+
+export interface EventFormData {
+  venue: Venue;
+  artists: NonBand[];  // Changed from Artist[] to NonBand[]
+  name: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  ticketPrice?: string;
+  ticketUrl?: string;
+  eventUrl?: string;
 }

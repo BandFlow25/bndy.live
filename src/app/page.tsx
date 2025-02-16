@@ -1,33 +1,64 @@
 'use client'
 import { useState, useEffect } from "react";
-import { Gig, GigFilters } from "@/lib/types";
+import { Event } from "@/lib/types";
 import { MapView } from "@/components/MapView";
 import { Sidebar } from "@/components/Sidebar";
-import { loadMockGigs, filterGigs } from "@/lib/services/mock-data";
+import { AddEventButton } from '@/components/events/AddEventButton';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/config/firebase';
+import { COLLECTIONS } from '@/lib/constants';
+import Link from 'next/link';
+import { Button } from "@/components/ui/button";
+import { Settings } from 'lucide-react'; // Using settings icon for admin
+
+interface EventFilters {
+  searchTerm: string;
+  ticketType: 'all' | 'free' | 'paid';
+  dateFilter: 'all' | 'today' | 'week' | 'month';
+  postcode?: string;
+}
 
 export default function Home() {
-  const [gigs, setGigs] = useState<Gig[]>([]);
-  const [filteredGigs, setFilteredGigs] = useState<Gig[]>([]);
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);  // Added for Sidebar
-  const [filters, setFilters] = useState<GigFilters>({
+  const [events, setEvents] = useState<Event[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [filters, setFilters] = useState<EventFilters>({
     searchTerm: "",
-    genre: "",
     ticketType: "all",
-    dateFilter: "all"  // Removed searchRadius as it's not in GigFilters type
+    dateFilter: "all"
   });
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null);
-  /* eslint-enable @typescript-eslint/no-unused-vars */
 
-  // Load mock data
+  // Load events from Firestore
   useEffect(() => {
-    const loadData = async () => {
-      const mockGigs = await loadMockGigs();
-      setGigs(mockGigs);
-      setFilteredGigs(mockGigs);
+    const loadEvents = async () => {
+      try {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
+        const eventsRef = collection(db, COLLECTIONS.EVENTS);
+        const q = query(
+          eventsRef,
+          where('date', '>=', now.toISOString()),
+          orderBy('date', 'asc')
+        );
+
+        const snapshot = await getDocs(q);
+        const loadedEvents = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Event[];
+
+        setEvents(loadedEvents);
+        setFilteredEvents(loadedEvents);
+      } catch (error) {
+        console.error('Error loading events:', error);
+      }
     };
-    loadData();
+
+    loadEvents();
   }, []);
 
   // Get user location
@@ -42,7 +73,6 @@ export default function Home() {
         },
         (error) => {
           console.log('Geolocation error:', error.message);
-          // Set default location - e.g., center of Stoke-on-Trent
           setUserLocation({
             lat: 53.002668,
             lng: -2.179404
@@ -56,7 +86,6 @@ export default function Home() {
       );
     } else {
       console.log('Geolocation is not supported by this browser');
-      // Set default location
       setUserLocation({
         lat: 53.002668,
         lng: -2.179404
@@ -64,36 +93,76 @@ export default function Home() {
     }
   }, []);
 
-  // Filter gigs when filters change
+  // Filter events when filters change
   useEffect(() => {
-    const filtered = filterGigs(gigs, {
-      searchTerm: filters.searchTerm,
-      genre: filters.genre,
-      dateFilter: filters.dateFilter,
-      postcode: filters.postcode
-    });
-    console.log(`Filtered gigs by date (${filters.dateFilter}):`, filtered.length);
-    // Log first few gigs to see dates
-    filtered.slice(0, 3).forEach(gig => 
-      console.log(`Sample gig: ${gig.bandName} at ${gig.venueName} on ${gig.date}`)
-    );
-    setFilteredGigs(filtered);
-  }, [filters, gigs]);
+    const filterEvents = (events: Event[]) => {
+      return events.filter(event => {
+        // Search term filter
+        const searchMatch = !filters.searchTerm || 
+          event.name.toLowerCase().includes(filters.searchTerm.toLowerCase());
+
+        // Date filter
+        const eventDate = new Date(event.date);
+        let dateMatch = true;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        switch (filters.dateFilter) {
+          case 'today':
+            dateMatch = eventDate.toDateString() === today.toDateString();
+            break;
+          case 'week': {
+            const weekFromNow = new Date(today);
+            weekFromNow.setDate(weekFromNow.getDate() + 7);
+            dateMatch = eventDate >= today && eventDate <= weekFromNow;
+            break;
+          }
+          case 'month': {
+            const monthFromNow = new Date(today);
+            monthFromNow.setMonth(monthFromNow.getMonth() + 1);
+            dateMatch = eventDate >= today && eventDate <= monthFromNow;
+            break;
+          }
+        }
+
+        // Ticket type filter
+        let ticketMatch = true;
+        if (filters.ticketType !== 'all') {
+          const isFree = !event.ticketPrice || event.ticketPrice.toLowerCase() === 'free';
+          ticketMatch = filters.ticketType === 'free' ? isFree : !isFree;
+        }
+
+        return searchMatch && dateMatch && ticketMatch;
+      });
+    };
+
+    const filtered = filterEvents(events);
+    setFilteredEvents(filtered);
+  }, [filters, events]);
 
   return (
     <div className="relative h-screen">
+      <div className="fixed top-4 right-4 z-10">
+        <Link href="/admin">
+          <Button variant="outline" className="bg-background/80 backdrop-blur-sm">
+            <Settings className="w-4 h-4 mr-2" />
+            Admin
+          </Button>
+        </Link>
+      </div>
       <Sidebar 
-        gigs={filteredGigs}
+        events={filteredEvents}
         filters={filters}
         onFilterChange={setFilters}
-        onGigSelect={setSelectedGig}
+        onEventSelect={setSelectedEvent}
         isOpen={isFilterOpen}
         onOpenChange={setIsFilterOpen}
       />
+      <AddEventButton map={mapInstance} />
       <MapView
-        gigs={filteredGigs}
-        onGigSelect={setSelectedGig}
+        onEventSelect={setSelectedEvent}
         userLocation={userLocation}
+        onMapLoad={setMapInstance}
       />
     </div>
   );

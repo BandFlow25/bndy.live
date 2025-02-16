@@ -1,10 +1,12 @@
 import { db } from '@/lib/config/firebase';
-import { collection, addDoc, getDocs, query, where, getDoc, doc, updateDoc } from 'firebase/firestore';
-import { GigFormInput, Venue } from '@/lib/types';
 import { COLLECTIONS } from '@/lib/constants';
+import { collection, addDoc, getDocs, query, where, getDoc, doc, updateDoc } from 'firebase/firestore';
+import type { Venue } from './venue-service';
+import type { EventFormData } from '@/components/events/EventCreationForm';
+
 
 // Existing gig operations
-export const addGig = async (data: GigFormInput) => {
+export const addGig = async (data: EventFormData) => {
   return addDoc(collection(db, COLLECTIONS.EVENTS), {
     ...data,
     type: 'gig',
@@ -23,6 +25,11 @@ export const getGigs = async () => {
 
 // New venue operations
 export const addVenue = async (data: Omit<Venue, 'id'>) => {
+  // Ensure we have all required fields for the security rules
+  if (!data.googlePlaceId || !data.location) {
+    throw new Error('Missing required fields for venue creation');
+  }
+
   return addDoc(collection(db, COLLECTIONS.VENUES), {
     ...data,
     createdAt: new Date().toISOString(),
@@ -52,11 +59,18 @@ export const getVenues = async (validated?: boolean) => {
   return getDocs(q);
 };
 
-
 export const findVenueByName = async (name: string) => {
   const q = query(
     collection(db, COLLECTIONS.VENUES),
     where('nameVariants', 'array-contains', name)
+  );
+  return getDocs(q);
+};
+
+export const findVenueByGooglePlaceId = async (googlePlaceId: string) => {
+  const q = query(
+    collection(db, COLLECTIONS.VENUES),
+    where('googlePlaceId', '==', googlePlaceId)
   );
   return getDocs(q);
 };

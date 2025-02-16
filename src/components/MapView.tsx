@@ -1,13 +1,18 @@
-'use client'
+// src/components/MapView.tsx
 import React, { useCallback, useState, useRef, useEffect } from 'react';
-import { Wrapper } from "@googlemaps/react-wrapper";
-import { Gig } from "@/lib/types";
+import { Event } from "@/lib/types";
+import { InfoWindowManager } from './map/InfoWindows/InfoWindowManager';
+import { GoogleMapsWrapper } from './map/GoogleMapsWrapper';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/lib/config/firebase';
+import { COLLECTIONS } from '@/lib/constants';
+import { useMemo } from 'react';
 
-function MapComponent({ 
-  center, 
+function MapComponent({
+  center,
   zoom,
   onMapLoad,
-  children 
+  children
 }: {
   center: google.maps.LatLngLiteral;
   zoom: number;
@@ -23,12 +28,12 @@ function MapComponent({
         center,
         zoom,
         styles: [
-          { featureType: "all", elementType: "all", stylers: [{ hue: "#242a38" }] }, // YOUR ORIGINAL STYLING
-          { featureType: "poi", elementType: "labels", stylers: [{ visibility: "on" }] }, // HIDE POINTS OF INTEREST
-          { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] }, // HIDE TRANSIT LABELS
-          { featureType: "road", elementType: "labels", stylers: [{ visibility: "on" }] }, // HIDE ROAD LABELS
-          { featureType: "administrative", elementType: "labels", stylers: [{ visibility: "on" }] }, // HIDE ADMIN LABELS
-          { featureType: "poi.business", elementType: "all", stylers: [{ visibility: "off" }] } // HIDE BUSINESS LABELS
+          { featureType: "all", elementType: "all", stylers: [{ hue: "#242a38" }] },
+          { featureType: "poi", elementType: "labels", stylers: [{ visibility: "on" }] },
+          { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
+          { featureType: "road", elementType: "labels", stylers: [{ visibility: "on" }] },
+          { featureType: "administrative", elementType: "labels", stylers: [{ visibility: "on" }] },
+          { featureType: "poi.business", elementType: "all", stylers: [{ visibility: "off" }] }
         ]
       });
       setMap(mapInstance);
@@ -36,7 +41,6 @@ function MapComponent({
     }
   }, [ref, map, center, zoom, onMapLoad]);
 
-  // Update center and zoom when they change
   useEffect(() => {
     if (map) {
       map.setCenter(center);
@@ -52,7 +56,11 @@ function MapComponent({
   );
 }
 
-function Marker({ map, position, onClick }: {
+function Marker({
+  map,
+  position,
+  onClick
+}: {
   map: google.maps.Map;
   position: google.maps.LatLngLiteral;
   onClick?: () => void;
@@ -89,27 +97,29 @@ function Marker({ map, position, onClick }: {
 }
 
 interface MapViewProps {
-  gigs: Gig[];
-  
-  onGigSelect: (gig: Gig | null) => void;
+  onEventSelect: (event: Event | null) => void;
   userLocation: google.maps.LatLngLiteral | null;
+  onMapLoad?: (map: google.maps.Map | null) => void;
 }
 
-// Default center (UK)
 const defaultCenter = { lat: 54.093409, lng: -2.89479 };
 
-export function MapView({ gigs, onGigSelect, userLocation }: MapViewProps) {
-  console.log(`MapView received ${gigs.length} gigs`);
-  // Log unique venues to check for duplicates
-  const uniqueVenues = new Set(gigs.map(gig => gig.venueName));
-  console.log(`Number of unique venues: ${uniqueVenues.size}`);
-  console.log("Unique venues:", Array.from(uniqueVenues));
+export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps) {
   const [center, setCenter] = useState(defaultCenter);
   const [zoom, setZoom] = useState(6);
   const [error, setError] = useState<string | null>(null);
-  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
+  // Handle map instance
+  const handleMapLoad = useCallback((map: google.maps.Map) => {
+    setMapInstance(map);
+    if (onMapLoad) onMapLoad(map);
+  }, [onMapLoad]);
+
+  // Handle user location
   useEffect(() => {
     if (!userLocation) {
       if (navigator.geolocation) {
@@ -120,11 +130,11 @@ export function MapView({ gigs, onGigSelect, userLocation }: MapViewProps) {
               lng: position.coords.longitude
             };
             setCenter(newLocation);
-            setZoom(12); // Zoom in when we get user location
+            setZoom(12);
           },
           (error) => {
             console.error('Error getting location:', error);
-            setError('Could not get your location. Showing all gigs.');
+            setError('Could not get your location. Showing default view.');
           }
         );
       }
@@ -134,44 +144,74 @@ export function MapView({ gigs, onGigSelect, userLocation }: MapViewProps) {
     }
   }, [userLocation]);
 
-  const handleMarkerClick = useCallback((gig: Gig, map: google.maps.Map) => {
-    if (!infoWindowRef.current) {
-      infoWindowRef.current = new google.maps.InfoWindow({
-        pixelOffset: new google.maps.Size(0, -30)
-      });
-      infoWindowRef.current.addListener('closeclick', () => onGigSelect(null));
-    }
-
-    const formattedDate = new Date(gig.date).toLocaleDateString('en-GB', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-
-    const content = `
-      <div style="padding: 16px; min-width: 200px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        <p style="font-size: 14px; margin-bottom: 8px; color: #666;">${gig.venueName}</p>
-        <p style="font-size: 14px; color: #666;">
-          ${formattedDate} at ${gig.time}
-        </p>
-      </div>
-    `;
-
-    infoWindowRef.current.setContent(content);
-    infoWindowRef.current.setPosition(gig.location);
-    infoWindowRef.current.open(map);
-    onGigSelect(gig);
-  }, [onGigSelect]);
-
+  // Fetch events within map bounds
   useEffect(() => {
-    return () => {
-      if (infoWindowRef.current) {
-        infoWindowRef.current.close();
-        infoWindowRef.current = null;
+    const fetchEvents = async () => {
+      if (!mapInstance) return;
+
+      try {
+        const bounds = mapInstance.getBounds();
+        if (!bounds) return;
+
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
+        const eventsRef = collection(db, COLLECTIONS.EVENTS);
+        const q = query(
+          eventsRef,
+          where('date', '>=', now.toISOString()),
+          orderBy('date', 'asc'),
+          limit(100)
+        );
+
+        const snapshot = await getDocs(q);
+        const loadedEvents = snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Event[];
+
+        // Filter events within bounds
+        const filteredEvents = loadedEvents.filter(event => {
+          return bounds.contains({
+            lat: event.location.lat,
+            lng: event.location.lng
+          });
+        });
+
+        setEvents(filteredEvents);
+      } catch (error) {
+        console.error('Error fetching events:', error);
       }
     };
-  }, []);
+
+    if (mapInstance) {
+      // Initial fetch
+      fetchEvents();
+
+      // Add bounds changed listener
+      const listener = mapInstance.addListener('bounds_changed', () => {
+        fetchEvents();
+      });
+
+      return () => {
+        google.maps.event.removeListener(listener);
+      };
+    }
+  }, [mapInstance]);
+
+  const handleMarkerClick = useCallback((event: Event) => {
+    if (!mapInstance) return;
+    
+    mapInstance.panTo(event.location);
+    setSelectedEvent(event);
+    onEventSelect(event);
+  }, [mapInstance, onEventSelect]);
+
+  const handleInfoWindowClose = useCallback(() => {
+    setSelectedEvent(null);
+    onEventSelect(null);
+  }, [onEventSelect]);
 
   if (!apiKey) {
     console.error('Google Maps API key is missing');
@@ -183,24 +223,32 @@ export function MapView({ gigs, onGigSelect, userLocation }: MapViewProps) {
   }
 
   return (
-    <Wrapper apiKey={apiKey}>
-      <MapComponent
-        center={center}
-        zoom={zoom}
-      >
-        {(map) => (
-          <>
-            {gigs.map((gig) => (
-              <Marker
-                key={gig.id}
-                map={map}
-                position={gig.location}
-                onClick={() => handleMarkerClick(gig, map)}
-              />
-            ))}
-          </>
-        )}
-      </MapComponent>
-    </Wrapper>
+    <div className="relative">
+      <GoogleMapsWrapper apiKey={apiKey}>
+        <MapComponent center={center} zoom={zoom} onMapLoad={handleMapLoad}>
+          {(map) => (
+            <>
+              {events.map((event) => (
+                <Marker
+                  key={event.id}
+                  map={map}
+                  position={event.location}
+                  onClick={() => handleMarkerClick(event)}
+                />
+              ))}
+              {selectedEvent && mapInstance && (
+                <InfoWindowManager
+                  mode="user"
+                  event={selectedEvent}
+                  map={mapInstance}
+                  onClose={handleInfoWindowClose}
+                  position={selectedEvent.location}
+                />
+              )}
+            </>
+          )}
+        </MapComponent>
+      </GoogleMapsWrapper>
+    </div>
   );
 }

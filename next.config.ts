@@ -1,4 +1,7 @@
+import fs from "fs";
+import path from "path";
 import type { NextConfig } from "next";
+
 
 const nextConfig: NextConfig = {
   webpack: (config) => {
@@ -9,8 +12,9 @@ const nextConfig: NextConfig = {
     return config;
   },
   eslint: {
-    ignoreDuringBuilds: true, // ✅ Suppresses ESLint errors during build
+    ignoreDuringBuilds: true,
   },
+ 
 };
 
 export default nextConfig;
