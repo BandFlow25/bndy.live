@@ -5,21 +5,22 @@ const https = require("https");
 const path = require("path");
 
 const dev = process.env.NODE_ENV !== "production";
+
+if (!dev) {
+    console.log("❌ server.js is not required in production. Exiting...");
+    process.exit(1);
+}
+
 const app = next({ dev });
 const handle = app.getRequestHandler();
-
 const PORT = 3000;
 
-// Only enable HTTPS in development if SSL certificates exist
-const useHttps = dev && fs.existsSync(path.join(__dirname, "localhost-key.pem")) && fs.existsSync(path.join(__dirname, "localhost.pem"));
+const useHttps = fs.existsSync(path.join(__dirname, "localhost-key.pem")) && fs.existsSync(path.join(__dirname, "localhost.pem"));
 
 app.prepare().then(() => {
     const server = express();
 
-    // Serve Next.js pages and API routes
-    server.all("*", (req, res) => {
-        return handle(req, res);
-    });
+    server.all("*", (req, res) => handle(req, res));
 
     if (useHttps) {
         const options = {
