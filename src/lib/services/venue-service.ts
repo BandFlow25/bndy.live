@@ -1,19 +1,10 @@
 // src/lib/services/venue-service.ts
+
 import { collection, getDocs, addDoc, where, query } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { searchVenueWithIncreasingRadius } from './places-service';
-import type { NonBand } from '@/lib/types';
-
-export interface Venue {
-  id?: string;
-  name: string;
-  address?: string;
-  location: google.maps.LatLngLiteral;
-  googlePlaceId?: string;
-  nameVariants?: string[];
-  isVerified?: boolean;
-}
+import { Venue, NewVenue } from '@/lib/types';
 
 export async function searchVenues(searchTerm: string, map: google.maps.Map): Promise<Venue[]> {
   if (!searchTerm || searchTerm.length < 3) return [];
@@ -34,7 +25,7 @@ export async function searchVenues(searchTerm: string, map: google.maps.Map): Pr
       .map(doc => ({
         id: doc.id,
         ...doc.data(),
-        isVerified: true
+        validated: true
       })) as Venue[];
 
     if (existingVenues.length > 0) {
@@ -43,13 +34,18 @@ export async function searchVenues(searchTerm: string, map: google.maps.Map): Pr
 
     // Only if no matches in bf_venues, search Places API
     const placesResults = await searchVenueWithIncreasingRadius(searchTerm, map);
+    const now = new Date().toISOString();
+    
     return placesResults.map(place => ({
       name: place.name || '',
-      address: place.formatted_address,
+      address: place.formatted_address || '',
       location: place.geometry?.location?.toJSON() || { lat: 0, lng: 0 },
       googlePlaceId: place.place_id,
-      isVerified: false
-    }));
+      validated: false,
+      id: '',  // Will be assigned when saved
+      createdAt: now,
+      updatedAt: now
+    })) as Venue[];
 
   } catch (error) {
     console.error('Error searching venues:', error);
@@ -57,13 +53,15 @@ export async function searchVenues(searchTerm: string, map: google.maps.Map): Pr
   }
 }
 
-export async function createVenue(venue: Venue) {
-  const docRef = await addDoc(collection(db, COLLECTIONS.VENUES), {
+export async function createVenue(venue: NewVenue): Promise<Venue> {
+  const now = new Date().toISOString();
+  const venueData = {
     ...venue,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  });
+    validated: false,
+    createdAt: now,
+    updatedAt: now
+  };
   
-  return { ...venue, id: docRef.id };
+  const docRef = await addDoc(collection(db, COLLECTIONS.VENUES), venueData);
+  return { ...venueData, id: docRef.id } as Venue;
 }
-

@@ -7,7 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { searchVenues } from '@/lib/services/venue-service';
 import { BndyLogo } from '@/components/ui/bndylogo';
 import { Building } from 'lucide-react';
-import type { EventFormData, Venue } from '../EventCreationForm';
+import type { EventFormData } from '../EventCreationForm';
+import { NonBand, Venue } from '@/lib/types';
 
 interface VenueStepProps {
   map: google.maps.Map;

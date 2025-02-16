@@ -1,12 +1,17 @@
 // src/components/MapView.tsx
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Event } from "@/lib/types";
-import { InfoWindowManager } from './map/InfoWindows/InfoWindowManager';
+import { EventInfoWindow } from './map/EventInfoWindow';  // New import
 import { GoogleMapsWrapper } from './map/GoogleMapsWrapper';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
-import { useMemo } from 'react';
+
+interface MapViewProps {
+  onEventSelect: (event: Event | null) => void;
+  userLocation: google.maps.LatLngLiteral | null;
+  onMapLoad?: (map: google.maps.Map | null) => void;
+}
 
 function MapComponent({
   center,
@@ -105,7 +110,7 @@ interface MapViewProps {
 const defaultCenter = { lat: 54.093409, lng: -2.89479 };
 
 export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps) {
-  const [center, setCenter] = useState(defaultCenter);
+  const [center, setCenter] = useState<google.maps.LatLngLiteral>(defaultCenter);
   const [zoom, setZoom] = useState(6);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
@@ -237,8 +242,7 @@ export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps
                 />
               ))}
               {selectedEvent && mapInstance && (
-                <InfoWindowManager
-                  mode="user"
+                <EventInfoWindow
                   event={selectedEvent}
                   map={mapInstance}
                   onClose={handleInfoWindowClose}

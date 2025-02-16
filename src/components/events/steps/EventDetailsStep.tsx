@@ -1,3 +1,4 @@
+//src\components\events\steps\EventDetailsStep.tsx
 import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Button } from "@/components/ui/button";

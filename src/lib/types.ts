@@ -1,6 +1,30 @@
 // src/lib/types.ts
 
+// Venue Types
+export interface BaseVenue {
+  name: string;
+  nameVariants?: string[];
+  googlePlaceId?: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
+  address: string;
+  postcode?: string;
+}
 
+export interface Venue extends BaseVenue {
+  id: string;
+  validated: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewVenue extends BaseVenue {
+  id?: string;  // Optional during creation
+}
+
+// Event Types
 export interface BaseEvent {
   id: string;
   name: string;
@@ -15,6 +39,7 @@ export interface BaseEvent {
   };
   ticketPrice?: string;
   ticketUrl?: string;
+  eventUrl?: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   updatedAt: string;
@@ -32,8 +57,7 @@ export interface LiveEvent extends BaseEvent {
 
 export type Event = BandEvent | LiveEvent;
 
-// Non-bndy.core bands
-// Update the NonBand interface (all fields that can exist in bf_nonbands)
+// Artist Types
 export interface NonBand {
   id: string;
   name: string;
@@ -47,24 +71,7 @@ export interface NonBand {
   updatedAt: string;
 }
 
-// Venue types
-export interface Venue {
-  id: string;
-  name: string;
-  nameVariants?: string[];
-  googlePlaceId?: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
-  address: string;
-  postcode?: string;
-  validated: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Filter types
+// Filter Types
 export interface EventFilters {
   searchTerm: string;
   genre?: string;
@@ -81,9 +88,10 @@ export interface LocationFilter {
   };
 }
 
+// Form Data Types
 export interface EventFormData {
   venue: Venue;
-  artists: NonBand[];  // Changed from Artist[] to NonBand[]
+  artists: NonBand[];
   name: string;
   date: string;
   startTime: string;

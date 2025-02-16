@@ -1,0 +1,40 @@
+/* src/components/map/google-maps.css */
+
+.gm-style .gm-style-iw-c {
+    background-color: #1a1f2d !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    border: 2px solid #FF6B00 !important;
+  }
+  
+  .gm-style .gm-style-iw-d {
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+  
+  .gm-style .gm-style-iw-t::after {
+    background: #1a1f2d !important;
+    border-left: 2px solid #FF6B00 !important;
+    border-top: 2px solid #FF6B00 !important;
+  }
+  
+  /* Close button styling */
+  .gm-ui-hover-effect {
+    width: 20px !important;
+    height: 20px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50% !important;
+    top: 2px !important;
+    right: 2px !important;
+  }
+  
+  .gm-ui-hover-effect img {
+    width: 10px !important;
+    height: 10px !important;
+    margin: 5px !important;
+    opacity: 1 !important;
+  }
+  
+  .gm-ui-hover-effect:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+  }

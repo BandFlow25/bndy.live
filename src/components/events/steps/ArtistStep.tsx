@@ -1,3 +1,4 @@
+//src\components\events\steps\ArtistStep.tsx
 import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Input } from "@/components/ui/input";

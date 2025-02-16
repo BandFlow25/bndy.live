@@ -55,7 +55,7 @@ export function VenueSearch({ map, onVenueSelect }: VenueSearchProps) {
         });
 
       // Then search Google Places
-      const placesResults = await searchVenueWithIncreasingRadius(term, map, 5); // Get up to 5 results
+      const placesResults = await searchVenueWithIncreasingRadius(term, map); // Get up to 5 results
       
       if (placesResults && placesResults.length > 0) {
         const newVenues = placesResults.map(place => ({
