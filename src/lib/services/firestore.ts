@@ -1,8 +1,7 @@
 import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { collection, addDoc, getDocs, query, where, getDoc, doc, updateDoc } from 'firebase/firestore';
-import type { Venue } from './venue-service';
-import type { EventFormData } from '@/components/events/EventCreationForm';
+import type { Venue, EventFormData } from '@/lib/types';  // Import from central types file
 
 
 // Existing gig operations

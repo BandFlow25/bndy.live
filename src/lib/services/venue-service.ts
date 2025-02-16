@@ -1,16 +1,14 @@
 // src/lib/services/venue-service.ts
-
 import { collection, getDocs, addDoc, where, query } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { searchVenueWithIncreasingRadius } from './places-service';
-import { Venue, NewVenue } from '@/lib/types';
+import type { Venue, NewVenue } from '@/lib/types';  // Import from central types file
 
 export async function searchVenues(searchTerm: string, map: google.maps.Map): Promise<Venue[]> {
   if (!searchTerm || searchTerm.length < 3) return [];
   
   try {
-    // First check existing venues
     const venuesRef = collection(db, COLLECTIONS.VENUES);
     const snapshot = await getDocs(venuesRef);
     const existingVenues = snapshot.docs
