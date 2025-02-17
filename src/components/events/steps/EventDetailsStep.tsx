@@ -17,7 +17,7 @@ import {
 import { DateSelect } from "@/components/ui/date-select";
 import { PriceInput } from "@/components/ui/price-input";
 import { TimeSelect } from "@/components/ui/time-select";
-import type { EventFormData } from '../EventCreationForm';
+import type { EventFormData } from '@/lib/types';
 import { AlertTriangle } from 'lucide-react';
 import { checkEventConflicts } from '@/lib/services/event-service';
 
@@ -84,7 +84,8 @@ export function EventDetailsStep({ form, loading, onSubmit, onBack }: EventDetai
               <FormControl>
                 <Input
                   {...field}
-                  placeholder={`${form.watch('artists')[0]?.name} @ ${venue.name}`}
+                  // Remove defaultValue prop
+                  placeholder={`${form.watch('artists')[0]?.name} @ ${form.watch('venue').name}`}
                 />
               </FormControl>
               <FormMessage />

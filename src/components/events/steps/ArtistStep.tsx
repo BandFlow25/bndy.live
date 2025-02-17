@@ -1,23 +1,31 @@
-//src\components\events\steps\ArtistStep.tsx
-import { useState, useEffect } from 'react';
+// src/components/events/steps/ArtistStep.tsx
+import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { X, Plus, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
 import { searchArtists, createArtist, type NewNonBand } from '@/lib/services/artist-service';
-import { X, Plus, ChevronDown, AlertCircle } from 'lucide-react';
-import type { EventFormData } from '../EventCreationForm';
 import type { NonBand } from '@/lib/types';
+import type { EventFormData } from '@/lib/types';
 import { stringSimilarity } from '@/lib/utils/string-similarity';
 
 interface ArtistStepProps {
   form: UseFormReturn<EventFormData>;
-  onNext: () => void;
-  onBack: () => void;
+  multipleMode: boolean;
+  onArtistSelect?: (artist: NonBand) => void;
+  onNext?: () => void;
+  onBack?: () => void;
 }
 
-export function ArtistStep({ form, onNext, onBack }: ArtistStepProps) {
+export function ArtistStep({
+  form,
+  multipleMode,
+  onArtistSelect,
+  onNext,
+  onBack
+}: ArtistStepProps) {
   const [searchResults, setSearchResults] = useState<NonBand[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,24 +56,6 @@ export function ArtistStep({ form, onNext, onBack }: ArtistStepProps) {
     }
   };
 
-  // Check for similar artists when typing in new artist name
-  useEffect(() => {
-    const checkSimilarArtists = async () => {
-      if (newArtist.name.length < 2) {
-        setSimilarArtists([]);
-        return;
-      }
-
-      const results = await searchArtists(newArtist.name);
-      const similar = results.filter(artist => 
-        stringSimilarity(artist.name.toLowerCase(), newArtist.name.toLowerCase()) > 0.6
-      );
-      setSimilarArtists(similar);
-    };
-
-    checkSimilarArtists();
-  }, [newArtist.name]);
-
   const handleAddNewArtist = async () => {
     if (!newArtist.name) return;
 
@@ -81,8 +71,14 @@ export function ArtistStep({ form, onNext, onBack }: ArtistStepProps) {
     setLoading(true);
     try {
       const createdArtist = await createArtist(newArtist);
-      const currentArtists = form.getValues('artists');
-      form.setValue('artists', [...currentArtists, createdArtist]);
+
+      if (!multipleMode) {
+        form.setValue('artists', [createdArtist]);
+        onArtistSelect?.(createdArtist);
+      } else {
+        const currentArtists = form.getValues('artists');
+        form.setValue('artists', [...currentArtists, createdArtist]);
+      }
 
       // Reset form
       setNewArtist({ name: '' });
@@ -95,6 +91,23 @@ export function ArtistStep({ form, onNext, onBack }: ArtistStepProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectArtist = (artist: NonBand) => {
+    if (!multipleMode) {
+      form.setValue('artists', [artist]);
+      onArtistSelect?.(artist);
+    } else {
+      const currentArtists = form.getValues('artists');
+      if (!currentArtists.some(a => a.id === artist.id)) {
+        form.setValue('artists', [...currentArtists, artist]);
+      }
+    }
+  };
+
+  const handleRemoveArtist = (artistId: string) => {
+    const currentArtists = form.getValues('artists');
+    form.setValue('artists', currentArtists.filter((artist: NonBand) => artist.id !== artistId));
   };
 
   return (
@@ -173,7 +186,7 @@ export function ArtistStep({ form, onNext, onBack }: ArtistStepProps) {
             className="w-full"
           />
 
-          <ScrollArea className="h-[300px]">
+          <ScrollArea className={multipleMode ? "h-[300px]" : "h-[400px]"}>
             {loading ? (
               <div className="p-4 text-center text-muted-foreground">
                 Searching artists...
@@ -183,12 +196,7 @@ export function ArtistStep({ form, onNext, onBack }: ArtistStepProps) {
                 <Card
                   key={artist.id}
                   className="mb-2 cursor-pointer hover:bg-accent transition-colors"
-                  onClick={() => {
-                    const currentArtists = form.getValues('artists');
-                    if (!currentArtists.some(a => a.id === artist.id)) {
-                      form.setValue('artists', [...currentArtists, artist]);
-                    }
-                  }}
+                  onClick={() => handleSelectArtist(artist)}
                 >
                   <CardContent className="p-4">
                     <div className="flex flex-col gap-1">
@@ -209,8 +217,8 @@ export function ArtistStep({ form, onNext, onBack }: ArtistStepProps) {
             ) : hasSearched && searchTerm.length >= 2 ? (
               <div className="p-4 text-center space-y-4">
                 <p className="text-muted-foreground">No artists found</p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setShowNewArtistForm(true)}
                   className="gap-2"
                 >
@@ -223,42 +231,42 @@ export function ArtistStep({ form, onNext, onBack }: ArtistStepProps) {
         </>
       )}
 
-      {/* Selected Artists Section */}
-      <div className="mt-4">
-        <div className="flex items-center gap-2 mb-2">
-          <h4 className="font-medium">Selected Artists</h4>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+      {/* Selected Artists Section (Only shown in multiple mode) */}
+      {multipleMode && form.watch('artists').length > 0 && (
+        <div className="mt-4">
+          <h4 className="font-medium mb-2">Selected Artists</h4>
+          {form.watch('artists').map((artist: NonBand, index: number) => (
+            <div key={artist.id || index} className="flex items-center justify-between p-2 bg-accent rounded mb-2">
+              <span>{artist.name}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleRemoveArtist(artist.id)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
         </div>
-        {form.watch('artists').map((artist, index) => (
-          <div key={artist.id || index} className="flex items-center justify-between p-2 bg-accent rounded mb-2">
-            <span>{artist.name}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                const currentArtists = form.getValues('artists');
-                form.setValue('artists', currentArtists.filter((_, i) => i !== index));
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
+      )}
 
-      {/* Navigation Buttons */}
-      <div className="flex gap-4">
-        <Button variant="outline" className="w-full" onClick={onBack}>
-          Back
-        </Button>
-        <Button
-          className="w-full"
-          disabled={form.watch('artists').length === 0}
-          onClick={onNext}
-        >
-          Next
-        </Button>
-      </div>
+      {/* Navigation Buttons (Only shown in multiple mode) */}
+      {multipleMode && (
+        <div className="flex gap-4">
+          <Button variant="outline" className="w-full" onClick={onBack}>
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          <Button
+            className="w-full"
+            disabled={form.watch('artists').length === 0}
+            onClick={onNext}
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

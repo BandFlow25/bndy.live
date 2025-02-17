@@ -1,4 +1,4 @@
-//src\components\events\AddEventButton.tsx
+// src/components/events/AddEventButton.tsx
 import { Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -10,7 +10,7 @@ import {
   SheetHeader
 } from "@/components/ui/sheet";
 import { useState } from 'react';
-import { EventCreationForm } from './EventCreationForm';
+import { CreateEventWizard } from './CreateEventWizard';  // Make sure this path is correct
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface AddEventButtonProps {
@@ -42,7 +42,7 @@ export function AddEventButton({ map }: AddEventButtonProps) {
             </SheetDescription>
           </SheetHeader>
         </VisuallyHidden>
-        {map && <EventCreationForm map={map} onSuccess={() => setIsOpen(false)} />}
+        {map && <CreateEventWizard map={map} onSuccess={() => setIsOpen(false)} />}
       </SheetContent>
     </Sheet>
   );

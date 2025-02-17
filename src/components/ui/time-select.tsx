@@ -1,6 +1,8 @@
+// src/components/ui/time-select.tsx
 import React, { useRef, useState } from 'react';
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
+import { formatTime, convertTo24Hour } from '@/lib/utils/date-utils';
 import { Clock, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Popover,
@@ -8,9 +10,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface TimeSelectProps {
-  value: string;        // Expects 24hr format "HH:mm"
-  onChange: (time: string) => void;  // Returns 24hr format "HH:mm"
+export interface TimeSelectProps {
+  value?: string;        // Make value optional
+  onChange: (time: string) => void;
   className?: string;
 }
 
@@ -23,7 +25,7 @@ function convertTo12Hour(time24: string): string {
 }
 
 export function TimeSelect({ 
-  value, 
+  value = '', // Provide default empty string
   onChange, 
   className
 }: TimeSelectProps) {
@@ -44,16 +46,10 @@ export function TimeSelect({
   const handleScroll = (direction: 'up' | 'down') => {
     setStartIndex(current => {
       if (direction === 'up') {
-        // When scrolling up at the start, wrap to the end
-        if (current === 0) {
-          return allTimes.length - 6;
-        }
+        if (current === 0) return allTimes.length - 6;
         return Math.max(0, current - 1);
       } else {
-        // When scrolling down at the end, wrap to the start
-        if (current >= allTimes.length - 6) {
-          return 0;
-        }
+        if (current >= allTimes.length - 6) return 0;
         return Math.min(allTimes.length - 6, current + 1);
       }
     });
@@ -75,7 +71,10 @@ export function TimeSelect({
             className
           )}
         >
-          <Clock className="mr-2 h-4 w-4" />
+          <Button>
+  <Clock className="mr-2 h-4 w-4" />
+  {value ? formatTime(value) : 'Select time'}
+</Button>
           {value ? convertTo12Hour(value) : 'Select time'}
         </Button>
       </PopoverTrigger>
@@ -109,7 +108,7 @@ export function TimeSelect({
                   time === value && "bg-primary text-primary-foreground"
                 )}
                 onClick={() => {
-                  onChange(time);  // Maintain 24hr format for the actual value
+                  onChange(time);
                   setOpen(false);
                 }}
               >

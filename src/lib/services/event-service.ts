@@ -4,8 +4,7 @@ import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { createArtist } from './artist-service';
 import { createVenue } from './venue-service';
-import type { EventFormData } from '@/components/events/EventCreationForm';
-import type { NonBand } from '@/lib/types';
+import type { NonBand, EventFormData } from '@/lib/types';
 
 interface EventData {
   venueId: string | undefined;
@@ -13,7 +12,7 @@ interface EventData {
   name: string;
   date: string;
   startTime: string;
-  endTime: string;
+  endTime?: string;
   location: google.maps.LatLngLiteral;
   status: string;
   source: string;

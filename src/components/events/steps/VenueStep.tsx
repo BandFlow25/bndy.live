@@ -1,5 +1,5 @@
 // src/components/events/steps/VenueStep.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,16 +7,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { searchVenues } from '@/lib/services/venue-service';
 import { BndyLogo } from '@/components/ui/bndylogo';
 import { Building } from 'lucide-react';
-import type { EventFormData } from '../EventCreationForm';
-import { NonBand, Venue } from '@/lib/types';
+import type { EventFormData } from '@/lib/types';
+import type { Venue } from '@/lib/types';
 
 interface VenueStepProps {
   map: google.maps.Map;
   form: UseFormReturn<EventFormData>;
-  onNext: () => void;
+  onVenueSelect: (venue: Venue) => void;
 }
 
-export function VenueStep({ map, form, onNext }: VenueStepProps) {
+export function VenueStep({ map, form, onVenueSelect }: VenueStepProps) {
   const [searchResults, setSearchResults] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -51,7 +51,7 @@ export function VenueStep({ map, form, onNext }: VenueStepProps) {
               className="mb-2 cursor-pointer hover:bg-accent transition-colors"
               onClick={() => {
                 form.setValue('venue', venue);
-                onNext();
+                onVenueSelect(venue);
               }}
             >
               <CardContent className="p-4">

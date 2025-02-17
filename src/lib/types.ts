@@ -93,9 +93,10 @@ export interface EventFormData {
   venue: Venue;
   artists: NonBand[];
   name: string;
+  description: string; // Added this field
   date: string;
   startTime: string;
-  endTime: string;
+  endTime?: string;
   ticketPrice?: string;
   ticketUrl?: string;
   eventUrl?: string;
