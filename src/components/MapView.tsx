@@ -33,6 +33,7 @@ function MapComponent({
       const mapInstance = new window.google.maps.Map(ref.current, {
         center,
         zoom,
+        gestureHandling: 'greedy',
         clickableIcons: false,
         styles: [
           { featureType: "all", elementType: "all", stylers: [{ hue: "#242a38" }] },
