@@ -1,6 +1,5 @@
-// src/app/artist/[id]/page.tsx
 import { ArtistPageClient } from '@/components/pages/ArtistPageClient';
 
-export default function ArtistPage({ params }: { params: { id: string } }) {
+export default function ArtistPage({ params }: { params: Record<string, string> }) {
   return <ArtistPageClient id={params.id} />;
 }
