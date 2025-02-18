@@ -1,16 +1,16 @@
 // src/lib/services/artist-service.ts
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
-import type { NonBand } from '@/lib/types';
+import type { Artist } from '@/lib/types';
 
-export type NewNonBand = Omit<NonBand, 'id' | 'createdAt' | 'updatedAt'>;
+export type NewArtist = Omit<Artist, 'id' | 'createdAt' | 'updatedAt'>;
 
-export async function searchArtists(searchTerm: string): Promise<NonBand[]> {
+export async function searchArtists(searchTerm: string): Promise<Artist[]> {
   if (!searchTerm || searchTerm.length < 2) return [];
 
   try {
-    const artistsRef = collection(db, COLLECTIONS.NONBANDS);
+    const artistsRef = collection(db, COLLECTIONS.ARTISTS);
     const snapshot = await getDocs(artistsRef);
     const existingArtists = snapshot.docs
       .filter(doc => {
@@ -21,7 +21,7 @@ export async function searchArtists(searchTerm: string): Promise<NonBand[]> {
       .map(doc => ({
         id: doc.id,
         ...doc.data(),
-      })) as NonBand[];
+      })) as Artist[];
 
     return existingArtists;
   } catch (error) {
@@ -30,9 +30,9 @@ export async function searchArtists(searchTerm: string): Promise<NonBand[]> {
   }
 }
 
-export async function createArtist(artist: NewNonBand): Promise<NonBand> {
+export async function createArtist(artist: NewArtist): Promise<Artist> {
   const now = new Date().toISOString();
-  const docRef = await addDoc(collection(db, COLLECTIONS.NONBANDS), {
+  const docRef = await addDoc(collection(db, COLLECTIONS.ARTISTS), {
     ...artist,
     nameVariants: [artist.name],
     createdAt: now,
@@ -46,4 +46,18 @@ export async function createArtist(artist: NewNonBand): Promise<NonBand> {
     createdAt: now,
     updatedAt: now
   };
+}
+
+export async function getArtistById(artistId: string): Promise<Artist | null> {
+  if (!artistId) return null;
+  try {
+    const artistSnap = await getDoc(doc(db, 'bf_artists', artistId));
+    if (artistSnap.exists()) {
+      const artistData = artistSnap.data() as Artist;
+      return { ...artistData, id: artistSnap.id }; // Ensure id is only added once
+    }
+  } catch (error) {
+    console.error('Error fetching artist:', error);
+  }
+  return null;
 }

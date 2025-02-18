@@ -44,7 +44,7 @@ export function ArtistsTable() {
  const loadArtists = async () => {
    setLoading(true);
    try {
-     const snapshot = await getDocs(collection(db, COLLECTIONS.NONBANDS));
+     const snapshot = await getDocs(collection(db, COLLECTIONS.ARTISTS));
      const artistData = snapshot.docs.map(doc => ({
        id: doc.id,
        ...doc.data()
@@ -71,7 +71,7 @@ export function ArtistsTable() {
  const handleSave = async (id: string) => {
    setLoading(true);
    try {
-     const artistRef = doc(db, COLLECTIONS.NONBANDS, id);
+     const artistRef = doc(db, COLLECTIONS.ARTISTS, id);
      await updateDoc(artistRef, {
        ...editData,
        updatedAt: new Date().toISOString()
@@ -88,7 +88,7 @@ export function ArtistsTable() {
  const handleDelete = async (id: string) => {
    setLoading(true);
    try {
-     await deleteDoc(doc(db, COLLECTIONS.NONBANDS, id));
+     await deleteDoc(doc(db, COLLECTIONS.ARTISTS, id));
      setDeleteConfirm(null);
      loadArtists(); // This will re-sort the list
    } catch (error) {

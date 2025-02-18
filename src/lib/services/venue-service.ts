@@ -1,5 +1,5 @@
 // src/lib/services/venue-service.ts
-import { collection, getDocs, addDoc, where, query } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { searchVenueWithIncreasingRadius } from './places-service';
@@ -62,4 +62,18 @@ export async function createVenue(venue: NewVenue): Promise<Venue> {
   
   const docRef = await addDoc(collection(db, COLLECTIONS.VENUES), venueData);
   return { ...venueData, id: docRef.id } as Venue;
+}
+
+export async function getVenueById(venueId: string): Promise<Venue | null> {
+  if (!venueId) return null;
+  try {
+    const venueSnap = await getDoc(doc(db, 'bf_venues', venueId));
+    if (venueSnap.exists()) {
+      const venueData = venueSnap.data() as Venue;
+      return { ...venueData, id: venueSnap.id }; // Ensure id is only added once
+    }
+  } catch (error) {
+    console.error('Error fetching venue:', error);
+  }
+  return null;
 }

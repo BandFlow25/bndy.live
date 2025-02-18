@@ -3,7 +3,7 @@ import { BndyLogo } from '@/components/ui/bndylogo';
 
 export function Header() {
   return (
-    <div className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm border-b p-4">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b p-4">
       <div className="flex flex-col items-center max-w-7xl mx-auto">
         {/* Logo */}
         <div className="text-primary">

@@ -12,9 +12,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={geist.className}>
-        <Header /> {/* Add Header here */}
-        <div className="pt-16">{children}</div> {/* Add padding to avoid overlap */}
+      <body>
+        <Header />
+        <div className="pt-16">
+          {children}
+        </div>
       </body>
     </html>
   );

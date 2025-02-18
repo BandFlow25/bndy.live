@@ -43,6 +43,10 @@
     animation: fadeIn 1s ease-in;
   }
 
+  .back-to-map {
+    @apply inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors;
+  }
+
   @keyframes fadeIn {
     from {
       opacity: 0;

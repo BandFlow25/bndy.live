@@ -8,5 +8,5 @@ export const COLLECTIONS = {
   BANDS: 'bf_bands',
   EVENTS: 'bf_events',
   VENUES: 'bf_venues',
-  NONBANDS: 'bf_nonbands'
+  ARTISTS: 'bf_artists'
 } as const;

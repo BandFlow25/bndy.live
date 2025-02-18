@@ -16,15 +16,31 @@ export function getOrdinalSuffix(day: number): string {
     }
   }
   
-  /**
-   * Formats a date with ordinal day (e.g., "Sat 22nd Feb")
-   */
-  export function formatEventDate(date: Date): string {
-    const day = date.getDate();
-    const month = date.toLocaleString('default', { month: 'short' });
-    const weekday = date.toLocaleString('default', { weekday: 'short' });
-    return `${weekday} ${day}${getOrdinalSuffix(day)} ${month}`;
+/**
+ * Formats a date with ordinal day (e.g., "Sat 22nd Feb") and identifies Today/Tomorrow.
+ */
+export function formatEventDate(date: Date): string {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // Normalize current date to midnight for comparison
+
+  const eventDate = new Date(date);
+  eventDate.setHours(0, 0, 0, 0); // Normalize event date
+
+  const day = eventDate.getDate();
+  const month = eventDate.toLocaleString('default', { month: 'short' });
+  const weekday = eventDate.toLocaleString('default', { weekday: 'short' });
+
+  const timeDiff = eventDate.getTime() - now.getTime();
+  const dayDiff = timeDiff / (1000 * 60 * 60 * 24);
+
+  if (dayDiff === 0) {
+    return `Today`;
+  } else if (dayDiff === 1) {
+    return `Tomorrow`;
   }
+
+  return `${weekday} ${day}${getOrdinalSuffix(day)} ${month}`;
+}
   
   /**
    * Converts 24-hour time to 12-hour format with AM/PM

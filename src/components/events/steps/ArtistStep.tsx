@@ -6,15 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Plus, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
-import { searchArtists, createArtist, type NewNonBand } from '@/lib/services/artist-service';
-import type { NonBand } from '@/lib/types';
+import { searchArtists, createArtist, type NewArtist } from '@/lib/services/artist-service';
+import type { Artist } from '@/lib/types';
 import type { EventFormData } from '@/lib/types';
 import { stringSimilarity } from '@/lib/utils/string-similarity';
 
 interface ArtistStepProps {
   form: UseFormReturn<EventFormData>;
   multipleMode: boolean;
-  onArtistSelect?: (artist: NonBand) => void;
+  onArtistSelect?: (artist: Artist) => void;
   onNext?: () => void;
   onBack?: () => void;
 }
@@ -26,14 +26,14 @@ export function ArtistStep({
   onNext,
   onBack
 }: ArtistStepProps) {
-  const [searchResults, setSearchResults] = useState<NonBand[]>([]);
+  const [searchResults, setSearchResults] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewArtistForm, setShowNewArtistForm] = useState(false);
-  const [newArtist, setNewArtist] = useState<NewNonBand>({
+  const [newArtist, setNewArtist] = useState<NewArtist>({
     name: ''
   });
-  const [similarArtists, setSimilarArtists] = useState<NonBand[]>([]);
+  const [similarArtists, setSimilarArtists] = useState<Artist[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = async (searchTerm: string) => {
@@ -93,7 +93,7 @@ export function ArtistStep({
     }
   };
 
-  const handleSelectArtist = (artist: NonBand) => {
+  const handleSelectArtist = (artist: Artist) => {
     if (!multipleMode) {
       form.setValue('artists', [artist]);
       onArtistSelect?.(artist);
@@ -107,7 +107,7 @@ export function ArtistStep({
 
   const handleRemoveArtist = (artistId: string) => {
     const currentArtists = form.getValues('artists');
-    form.setValue('artists', currentArtists.filter((artist: NonBand) => artist.id !== artistId));
+    form.setValue('artists', currentArtists.filter((artist: Artist) => artist.id !== artistId));
   };
 
   return (
@@ -235,7 +235,7 @@ export function ArtistStep({
       {multipleMode && form.watch('artists').length > 0 && (
         <div className="mt-4">
           <h4 className="font-medium mb-2">Selected Artists</h4>
-          {form.watch('artists').map((artist: NonBand, index: number) => (
+          {form.watch('artists').map((artist: Artist, index: number) => (
             <div key={artist.id || index} className="flex items-center justify-between p-2 bg-accent rounded mb-2">
               <span>{artist.name}</span>
               <Button

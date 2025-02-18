@@ -1,11 +1,12 @@
-// src/components/MapView.tsx
 import React, { useCallback, useState, useRef, useEffect } from 'react';
+import { MarkerClusterer, GridAlgorithm } from '@googlemaps/markerclusterer';
 import { Event } from "@/lib/types";
-import { EventInfoWindow } from './map/EventInfoWindow';  // New import
+import { EventInfoWindow } from './map/EventInfoWindow';
 import { GoogleMapsWrapper } from './map/GoogleMapsWrapper';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
+import './map/google-maps.css'
 
 interface MapViewProps {
   onEventSelect: (event: Event | null) => void;
@@ -32,9 +33,10 @@ function MapComponent({
       const mapInstance = new window.google.maps.Map(ref.current, {
         center,
         zoom,
+        clickableIcons: false,
         styles: [
           { featureType: "all", elementType: "all", stylers: [{ hue: "#242a38" }] },
-          { featureType: "poi", elementType: "labels", stylers: [{ visibility: "on" }] },
+          { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
           { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
           { featureType: "road", elementType: "labels", stylers: [{ visibility: "on" }] },
           { featureType: "administrative", elementType: "labels", stylers: [{ visibility: "on" }] },
@@ -61,51 +63,102 @@ function MapComponent({
   );
 }
 
-function Marker({
+function ClusteredMarkers({
   map,
-  position,
-  onClick
+  events,
+  onMarkerClick
 }: {
   map: google.maps.Map;
-  position: google.maps.LatLngLiteral;
-  onClick?: () => void;
+  events: Event[];
+  onMarkerClick: (event: Event, allEvents?: Event[]) => void;
 }) {
-  const markerRef = useRef<google.maps.Marker | null>(null);
-
   useEffect(() => {
-    markerRef.current = new google.maps.Marker({
+    // Group events by venue location
+    const eventsByLocation = events.reduce((acc, event) => {
+      const key = `${event.location.lat},${event.location.lng}`;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(event);
+      return acc;
+    }, {} as Record<string, Event[]>);
+
+    // Create markers for each unique location
+    const markers = Object.entries(eventsByLocation).map(([locationKey, locationEvents]) => {
+      const [lat, lng] = locationKey.split(',').map(Number);
+      
+      return new google.maps.Marker({
+        position: { lat, lng },
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: "#FF6B00",
+          fillOpacity: 1,
+          strokeWeight: 2,
+          strokeColor: "#FFFFFF",
+        },
+        label: locationEvents.length > 1 ? {
+          text: String(locationEvents.length),
+          color: "#FFFFFF",
+          fontSize: "12px",
+          fontWeight: "bold"
+        } : undefined,
+        map
+      });
+    });
+
+    // Add click listeners
+    Object.entries(eventsByLocation).forEach(([locationKey, locationEvents], index) => {
+      markers[index].addListener('click', () => {
+        onMarkerClick(locationEvents[0], locationEvents);
+      });
+    });
+
+    // Create clusterer with the markers
+    const clusterer = new MarkerClusterer({
       map,
-      position,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 10,
-        fillColor: "#FF6B00",
-        fillOpacity: 1,
-        strokeWeight: 2,
-        strokeColor: "#FFFFFF",
+      markers,
+      algorithm: new GridAlgorithm({
+        maxZoom: 15,
+        gridSize: 60
+      }),
+      renderer: {
+        render: ({ count, position }) => {
+          return new google.maps.Marker({
+            position,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              fillColor: "#FF6B00",
+              fillOpacity: 1,
+              strokeWeight: 2,
+              strokeColor: "#FFFFFF",
+              scale: count > 1 ? 22 : 10,
+            },
+            label: count > 1 ? {
+              text: String(count),
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: "bold"
+            } : undefined
+          });
+        }
       }
     });
 
-    if (onClick) {
-      markerRef.current.addListener('click', onClick);
-    }
-
+    // Cleanup
     return () => {
-      if (markerRef.current) {
-        google.maps.event.clearListeners(markerRef.current, 'click');
-        markerRef.current.setMap(null);
-      }
+      clusterer.clearMarkers();
+      markers.forEach(marker => {
+        google.maps.event.clearListeners(marker, 'click');
+        marker.setMap(null);
+      });
     };
-  }, [map, position, onClick]);
+  }, [map, events, onMarkerClick]);
 
   return null;
 }
 
-interface MapViewProps {
-  onEventSelect: (event: Event | null) => void;
-  userLocation: google.maps.LatLngLiteral | null;
-  onMapLoad?: (map: google.maps.Map | null) => void;
-}
+
 
 const defaultCenter = { lat: 54.093409, lng: -2.89479 };
 
@@ -116,6 +169,7 @@ export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [venueEvents, setVenueEvents] = useState<Event[]>([]);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   // Handle map instance
@@ -161,6 +215,7 @@ export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps
         const now = new Date();
         now.setHours(0, 0, 0, 0);
 
+        // Query events
         const eventsRef = collection(db, COLLECTIONS.EVENTS);
         const q = query(
           eventsRef,
@@ -205,11 +260,12 @@ export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps
     }
   }, [mapInstance]);
 
-  const handleMarkerClick = useCallback((event: Event) => {
+  const handleMarkerClick = useCallback((event: Event, venueEvents?: Event[]) => {
     if (!mapInstance) return;
-    
+  
     mapInstance.panTo(event.location);
     setSelectedEvent(event);
+    setVenueEvents(venueEvents || []); // Add this state if you haven't already
     onEventSelect(event);
   }, [mapInstance, onEventSelect]);
 
@@ -233,20 +289,22 @@ export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps
         <MapComponent center={center} zoom={zoom} onMapLoad={handleMapLoad}>
           {(map) => (
             <>
-              {events.map((event) => (
-                <Marker
-                  key={event.id}
-                  map={map}
-                  position={event.location}
-                  onClick={() => handleMarkerClick(event)}
-                />
-              ))}
+              <ClusteredMarkers
+                map={map}
+                events={events}
+                onMarkerClick={handleMarkerClick}
+              />
               {selectedEvent && mapInstance && (
-                <EventInfoWindow
-                  event={selectedEvent}
-                  map={mapInstance}
-                  onClose={handleInfoWindowClose}
-                  position={selectedEvent.location}
+               <EventInfoWindow
+               event={selectedEvent}
+               allVenueEvents={venueEvents}
+               map={mapInstance}
+               onClose={handleInfoWindowClose}
+               onEventChange={(newEvent) => {
+                 setSelectedEvent(newEvent);
+                 onEventSelect(newEvent);
+               }}
+               position={selectedEvent.location}
                 />
               )}
             </>

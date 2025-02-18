@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VenuesTable } from "@/components/admin/VenuesTable";
 import { ArtistsTable } from "@/components/admin/ArtistsTable";
+import { DataMigration } from "@/components/admin/DataMigration"; 
 
 export default function AdminPage() {
   return (
@@ -13,6 +14,7 @@ export default function AdminPage() {
         <TabsList>
           <TabsTrigger value="venues">Venues</TabsTrigger>
           <TabsTrigger value="artists">Artists</TabsTrigger>
+          <TabsTrigger value="migration">Data Migration</TabsTrigger>
         </TabsList>
         
         <TabsContent value="venues">
@@ -22,6 +24,10 @@ export default function AdminPage() {
         <TabsContent value="artists">
           <ArtistsTable />
         </TabsContent>
+
+        <TabsContent value="migration">
+  <DataMigration />
+</TabsContent>
       </Tabs>
     </div>
   );

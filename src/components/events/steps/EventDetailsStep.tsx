@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NonBand, Venue } from '@/lib/types';
+import { Artist, Venue } from '@/lib/types';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import {
   AlertDialog,
@@ -44,7 +44,7 @@ export function EventDetailsStep({ form, loading, onSubmit, onBack }: EventDetai
       if (date && startTime && venue) {
         const foundConflicts = await checkEventConflicts({
           venue,
-          artists: artists as NonBand[],  // If needed, ensure proper type casting
+          artists: artists as Artist[],  // If needed, ensure proper type casting
           date,
           startTime
         });

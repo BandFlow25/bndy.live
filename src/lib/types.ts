@@ -25,40 +25,37 @@ export interface NewVenue extends BaseVenue {
 }
 
 // Event Types
-export interface BaseEvent {
+export type EventSource = 'bndy.live' | 'user' | 'bndy.core';
+
+export interface Event {
   id: string;
   name: string;
   date: string;
   startTime: string;
   endTime?: string;
   venueId: string;
-  venueName: string;  // Denormalized for convenience
+  venueName: string;
+  artistIds: string[];  // Array of artist IDs
   location: {
     lat: number;
     lng: number;
   };
+  description?: string;
   ticketPrice?: string;
   ticketUrl?: string;
   eventUrl?: string;
+  source: EventSource;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   updatedAt: string;
+  createdById?: string;    // Optional: ID of the user who created it
+  claimedByBandId?: string; // Optional: ID of the band that claimed this event
+  claimedAt?: string;      // Optional: When it was claimed
 }
 
-export interface BandEvent extends BaseEvent {
-  bandId: string;
-  source: 'bndy.core';
-}
-
-export interface LiveEvent extends BaseEvent {
-  artistIds: string[];  // Array of nonband IDs
-  source: 'bndy.live';
-}
-
-export type Event = BandEvent | LiveEvent;
 
 // Artist Types
-export interface NonBand {
+export interface Artist {
   id: string;
   name: string;
   nameVariants?: string[];
@@ -91,7 +88,7 @@ export interface LocationFilter {
 // Form Data Types
 export interface EventFormData {
   venue: Venue;
-  artists: NonBand[];
+  artists: Artist[];
   name: string;
   description: string; // Added this field
   date: string;
@@ -100,4 +97,12 @@ export interface EventFormData {
   ticketPrice?: string;
   ticketUrl?: string;
   eventUrl?: string;
+}
+
+export interface VenueDetails extends Venue {
+  events?: Event[];
+}
+
+export interface ArtistDetails extends Artist {
+  events?: Event[];
 }

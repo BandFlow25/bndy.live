@@ -4,7 +4,7 @@ import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { createArtist } from './artist-service';
 import { createVenue } from './venue-service';
-import type { NonBand, EventFormData } from '@/lib/types';
+import type { Artist, EventFormData } from '@/lib/types';
 
 interface EventData {
   venueId: string | undefined;
@@ -14,13 +14,17 @@ interface EventData {
   startTime: string;
   endTime?: string;
   location: google.maps.LatLngLiteral;
-  status: string;
-  source: string;
+  description?: string;  // Add this
+  status: 'pending' | 'approved' | 'rejected';  // Make this more specific
+  source: 'bndy.live' | 'user' | 'bndy.core';  // Make this more specific
   createdAt: string;
   updatedAt: string;
   ticketPrice?: string;
   ticketUrl?: string;
   eventUrl?: string;
+  createdById?: string;    // Add this for future use
+  claimedByBandId?: string; // Add this for future use
+  claimedAt?: string;      // Add this for future use
 }
 
 export async function createEvent(data: EventFormData) {
@@ -30,6 +34,7 @@ export async function createEvent(data: EventFormData) {
     const newVenue = await createVenue(data.venue);
     venueId = newVenue.id;
   }
+  
 
   // Ensure all artists exist in database
   const artistIds = await Promise.all(
@@ -47,12 +52,12 @@ export async function createEvent(data: EventFormData) {
     name: data.name || `${data.artists[0].name} @ ${data.venue.name}`,
     date: data.date,
     startTime: data.startTime,
-    endTime: data.endTime,
     location: data.venue.location,
     status: 'pending',
     source: 'bndy.live',
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    ...(data.endTime ? { endTime: data.endTime } : {}),
   };
 
   // Add optional fields if they have values
@@ -65,6 +70,9 @@ export async function createEvent(data: EventFormData) {
   if (data.eventUrl && data.eventUrl.trim() !== '') {
     eventData.eventUrl = data.eventUrl;
   }
+  if (data.description && data.description.trim() !== '') {
+    eventData.description = data.description;
+  }
 
   return addDoc(collection(db, COLLECTIONS.EVENTS), eventData);
 }
@@ -74,7 +82,7 @@ interface ConflictCheck {
     id?: string;
     name: string;
   };
-  artists: NonBand[];
+  artists: Artist[];
   date: string;
   startTime: string;
 }
