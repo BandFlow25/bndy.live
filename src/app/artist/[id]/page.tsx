@@ -1,13 +1,17 @@
 import { ArtistPageClient } from '@/components/pages/ArtistPageClient';
 
-type PageProps = {
-  params: { id: string };
-};
+// Define the params type as a Promise
+interface PageParams {
+  params: Promise<{ id: string }>;
+}
 
-export default function ArtistPage({ params }: PageProps) {
-  if (!params?.id) {
-    throw new Error("Missing artist ID in params");
+export default async function Page({ params }: PageParams) {
+  // Await the params
+  const resolvedParams = await params;
+  
+  if (!resolvedParams.id || typeof resolvedParams.id !== 'string') {
+    throw new Error("Invalid or missing artist ID");
   }
 
-  return <ArtistPageClient id={params.id} />;
+  return <ArtistPageClient id={resolvedParams.id} />;
 }

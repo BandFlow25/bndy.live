@@ -1,13 +1,15 @@
 import { VenuePageClient } from '@/components/pages/VenuePageClient';
 
-type PageProps = {
-  params: { id: string };
-};
+interface PageParams {
+  params: Promise<{ id: string }>;
+}
 
-export default function VenuePage({ params }: PageProps) {
-  if (!params?.id) {
-    throw new Error("Missing venue ID in params");
+export default async function Page({ params }: PageParams) {
+  const resolvedParams = await params;
+  
+  if (!resolvedParams.id || typeof resolvedParams.id !== 'string') {
+    throw new Error("Invalid or missing venue ID");
   }
 
-  return <VenuePageClient id={params.id} />;
+  return <VenuePageClient id={resolvedParams.id} />;
 }
