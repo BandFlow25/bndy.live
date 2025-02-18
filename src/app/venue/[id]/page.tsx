@@ -1,6 +1,12 @@
 // src/app/venue/[id]/page.tsx
 import { VenuePageClient } from '@/components/pages/VenuePageClient';
 
-export default function Page({ params }: { params: { id: string } }) {
+interface VenuePageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function VenuePage({ params }: VenuePageProps) {
   return <VenuePageClient id={params.id} />;
 }
