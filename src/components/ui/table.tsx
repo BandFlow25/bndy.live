@@ -1,6 +1,8 @@
 // src/components/ui/table.tsx
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 
 // Add these interfaces at the top
 interface TableHTMLAttributes extends React.HTMLAttributes<HTMLTableElement> {
@@ -29,15 +31,15 @@ const Table = React.forwardRef<HTMLTableElement, TableHTMLAttributes>(
       />
     </div>
   )
-)
-Table.displayName = "Table"
+);
+Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, TableSectionHTMLAttributes>(
   ({ className, ...props }, ref) => (
     <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
   )
-)
-TableHeader.displayName = "TableHeader"
+);
+TableHeader.displayName = "TableHeader";
 
 const TableBody = React.forwardRef<HTMLTableSectionElement, TableSectionHTMLAttributes>(
   ({ className, ...props }, ref) => (
@@ -47,19 +49,8 @@ const TableBody = React.forwardRef<HTMLTableSectionElement, TableSectionHTMLAttr
       {...props}
     />
   )
-)
-TableBody.displayName = "TableBody"
-
-const TableFooter = React.forwardRef<HTMLTableSectionElement, TableSectionHTMLAttributes>(
-  ({ className, ...props }, ref) => (
-    <tfoot
-      ref={ref}
-      className={cn("bg-primary font-medium text-primary-foreground", className)}
-      {...props}
-    />
-  )
-)
-TableFooter.displayName = "TableFooter"
+);
+TableBody.displayName = "TableBody";
 
 const TableRow = React.forwardRef<HTMLTableRowElement, TableRowHTMLAttributes>(
   ({ className, ...props }, ref) => (
@@ -72,22 +63,22 @@ const TableRow = React.forwardRef<HTMLTableRowElement, TableRowHTMLAttributes>(
       {...props}
     />
   )
-)
-TableRow.displayName = "TableRow"
+);
+TableRow.displayName = "TableRow";
 
 const TableHead = React.forwardRef<HTMLTableCellElement, TableCellHTMLAttributes>(
   ({ className, ...props }, ref) => (
     <th
       ref={ref}
       className={cn(
-        "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
+        "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 cursor-pointer",
         className
       )}
       {...props}
     />
   )
-)
-TableHead.displayName = "TableHead"
+);
+TableHead.displayName = "TableHead";
 
 const TableCell = React.forwardRef<HTMLTableCellElement, TableCellHTMLAttributes>(
   ({ className, ...props }, ref) => (
@@ -97,8 +88,8 @@ const TableCell = React.forwardRef<HTMLTableCellElement, TableCellHTMLAttributes
       {...props}
     />
   )
-)
-TableCell.displayName = "TableCell"
+);
+TableCell.displayName = "TableCell";
 
 const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTMLAttributes<HTMLTableCaptionElement>>(
   ({ className, ...props }, ref) => (
@@ -108,16 +99,67 @@ const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTMLAttribu
       {...props}
     />
   )
-)
-TableCaption.displayName = "TableCaption"
+);
+TableCaption.displayName = "TableCaption";
+
+// Filtering and Sorting logic
+export function DataTable<T extends Record<string, any>>({ data, columns, className, ...props }: { data: T[], columns: { key: keyof T, label: string, sortable?: boolean }[], className?: string }) {
+  const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: "asc" | "desc" } | null>(null);
+  const [filterQuery, setFilterQuery] = useState("");
+
+  const sortedAndFilteredData = [...data]
+    .filter((item) =>
+      columns.some((col) => item[col.key]?.toString().toLowerCase().includes(filterQuery.toLowerCase()))
+    )
+    .sort((a, b) => {
+      if (!sortConfig) return 0;
+      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === "asc" ? -1 : 1;
+      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+  return (
+    <div className="relative w-full overflow-auto">
+      <Input
+        type="text"
+        placeholder="Filter..."
+        value={filterQuery}
+        onChange={(e) => setFilterQuery(e.target.value)}
+        className="mb-4"
+      />
+      <Table className={className} {...props}>
+        <TableHeader>
+          <TableRow>
+            {columns.map((col) => (
+              <TableHead
+                key={col.key as string}
+                onClick={() => col.sortable && setSortConfig({ key: col.key, direction: sortConfig?.direction === "asc" ? "desc" : "asc" })}
+              >
+                {col.label} {col.sortable && (sortConfig?.key === col.key ? (sortConfig.direction === "asc" ? "▲" : "▼") : "")}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedAndFilteredData.map((item, index) => (
+            <TableRow key={index}>
+              {columns.map((col) => (
+                <TableCell key={col.key as string}>{item[col.key]}</TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
 
 export {
   Table,
   TableHeader,
   TableBody,
-  TableFooter,
-  TableHead,
   TableRow,
+  TableHead,
   TableCell,
   TableCaption,
-}
+};

@@ -1,11 +1,11 @@
-// src/components/events/steps/VenueStep.tsx
+// src\components\events\createwizardsteps\VenueStep.tsx
 import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { searchVenues } from '@/lib/services/venue-service';
-import { BndyLogo } from '@/components/ui/bndylogo';
+import { searchVenues, createVenue } from '@/lib/services/venue-service';
+import { BndyBLogo } from '@/components/ui/bndyblogo';
 import { Building } from 'lucide-react';
 import type { EventFormData } from '@/lib/types';
 import type { Venue } from '@/lib/types';
@@ -14,9 +14,10 @@ interface VenueStepProps {
   map: google.maps.Map;
   form: UseFormReturn<EventFormData>;
   onVenueSelect: (venue: Venue) => void;
+  onComplete?: () => void;  // Add this
 }
 
-export function VenueStep({ map, form, onVenueSelect }: VenueStepProps) {
+export function VenueStep({ map, form, onVenueSelect, onComplete }: VenueStepProps) {
   const [searchResults, setSearchResults] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -31,6 +32,19 @@ export function VenueStep({ map, form, onVenueSelect }: VenueStepProps) {
       setLoading(false);
     }
   };
+
+  const handleVenueSelect = async (venue: Venue) => {
+    try {
+        let selectedVenue = venue;
+        form.setValue('venue', selectedVenue);
+        
+        // Call appropriate callback
+        onVenueSelect?.(selectedVenue);
+        onComplete?.();
+    } catch (error) {
+        console.error('Error handling venue selection:', error);
+    }
+};
 
   return (
     <div className="space-y-4">
@@ -49,36 +63,32 @@ export function VenueStep({ map, form, onVenueSelect }: VenueStepProps) {
             <Card
               key={venue.id || `new-${index}`}
               className="mb-2 cursor-pointer hover:bg-accent transition-colors"
-              onClick={() => {
-                form.setValue('venue', venue);
-                onVenueSelect(venue);
-              }}
+              onClick={() => handleVenueSelect(venue)}
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{venue.name}</h3>
-                      {venue.id ? (
-                        <div className="w-6 h-6">
-                          <BndyLogo />
-                        </div>
-                      ) : (
-                        <Building className="w-4 h-4 text-muted-foreground" />
-                      )}
-                    </div>
+                    <h3 className="font-semibold">{venue.name}</h3>
                     {venue.address && (
                       <p className="text-sm text-muted-foreground mt-1">
                         {venue.address}
                       </p>
                     )}
-                    {venue.id ? (
-                      <p className="text-xs text-primary mt-1">Verified venue</p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        New venue - will be added to database
-                      </p>
-                    )}
+                    <div className="flex items-center gap-2 mt-1">
+                      {venue.id ? (
+                        <>
+                          
+                          <span className="text-xs text-primary">Verified venue</span>
+                        </>
+                      ) : (
+                        <>
+                          <Building className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            New venue - will be added to database
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>

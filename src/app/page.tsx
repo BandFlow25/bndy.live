@@ -1,10 +1,10 @@
-//src\app\page.tsx
 'use client'
 import { useState, useEffect } from "react";
 import { Event } from "@/lib/types";
 import { MapView } from "@/components/MapView";
 import { Sidebar } from "@/components/Sidebar";
 import { AddEventButton } from '@/components/events/AddEventButton';
+import { FilterButton } from '@/components/ui/eventquickfilterbutton';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
@@ -17,6 +17,20 @@ interface EventFilters {
   ticketType: 'all' | 'free' | 'paid';
   dateFilter: 'all' | 'today' | 'week' | 'month';
   postcode?: string;
+}
+
+// Helper function to get this week's date range
+function getThisWeekDateRange() {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const startDate = new Date(now);
+  const endDate = new Date(now);
+  endDate.setDate(endDate.getDate() + (7 - endDate.getDay()));
+
+  return {
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString()
+  };
 }
 
 export default function Home() {
@@ -32,17 +46,24 @@ export default function Home() {
   });
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null);
 
-  // Load events from Firestore
+  // Initialize with this week's date range
+  const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string }>(getThisWeekDateRange());
+
+  const setDateFilter = (startDate: string, endDate: string) => {
+    setDateRange({ startDate, endDate });
+  };
+
+  // Load events from Firestore when date range changes
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
+        console.log(`Fetching events for date range: ${dateRange.startDate} - ${dateRange.endDate}`);
 
         const eventsRef = collection(db, COLLECTIONS.EVENTS);
         const q = query(
           eventsRef,
-          where('date', '>=', now.toISOString()),
+          where('date', '>=', dateRange.startDate),
+          where('date', '<=', dateRange.endDate),
           orderBy('date', 'asc')
         );
 
@@ -52,6 +73,8 @@ export default function Home() {
           ...doc.data()
         })) as Event[];
 
+        console.log(`Loaded ${loadedEvents.length} events:`, loadedEvents);
+
         setEvents(loadedEvents);
         setFilteredEvents(loadedEvents);
       } catch (error) {
@@ -60,7 +83,7 @@ export default function Home() {
     };
 
     loadEvents();
-  }, []);
+  }, [dateRange]); // Reload events when date range changes
 
   // Get user location
   useEffect(() => {
@@ -94,53 +117,6 @@ export default function Home() {
     }
   }, []);
 
-  // Filter events when filters change
-  useEffect(() => {
-    const filterEvents = (events: Event[]) => {
-      return events.filter(event => {
-        // Search term filter
-        const searchMatch = !filters.searchTerm || 
-          event.name.toLowerCase().includes(filters.searchTerm.toLowerCase());
-
-        // Date filter
-        const eventDate = new Date(event.date);
-        let dateMatch = true;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        switch (filters.dateFilter) {
-          case 'today':
-            dateMatch = eventDate.toDateString() === today.toDateString();
-            break;
-          case 'week': {
-            const weekFromNow = new Date(today);
-            weekFromNow.setDate(weekFromNow.getDate() + 7);
-            dateMatch = eventDate >= today && eventDate <= weekFromNow;
-            break;
-          }
-          case 'month': {
-            const monthFromNow = new Date(today);
-            monthFromNow.setMonth(monthFromNow.getMonth() + 1);
-            dateMatch = eventDate >= today && eventDate <= monthFromNow;
-            break;
-          }
-        }
-
-        // Ticket type filter
-        let ticketMatch = true;
-        if (filters.ticketType !== 'all') {
-          const isFree = !event.ticketPrice || event.ticketPrice.toLowerCase() === 'free';
-          ticketMatch = filters.ticketType === 'free' ? isFree : !isFree;
-        }
-
-        return searchMatch && dateMatch && ticketMatch;
-      });
-    };
-
-    const filtered = filterEvents(events);
-    setFilteredEvents(filtered);
-  }, [filters, events]);
-
   return (
     <div className="relative h-screen">
       <div className="fixed top-4 right-4 z-10">
@@ -151,19 +127,14 @@ export default function Home() {
           </Button>
         </Link>
       </div>
-      <Sidebar 
-        events={filteredEvents}
-        filters={filters}
-        onFilterChange={setFilters}
-        onEventSelect={setSelectedEvent}
-        isOpen={isFilterOpen}
-        onOpenChange={setIsFilterOpen}
-      />
+      
       <AddEventButton map={mapInstance} />
+      <FilterButton onFilterChange={setDateFilter} />
       <MapView
         onEventSelect={setSelectedEvent}
         userLocation={userLocation}
         onMapLoad={setMapInstance}
+        dateRange={dateRange}
       />
     </div>
   );

@@ -48,16 +48,12 @@ export function EventInfoWindow({
     async function fetchDetails() {
       try {
         if (event.venueId) {
-          console.log('Fetching venue:', event.venueId);
           const venueData = await getVenueById(event.venueId);
-          console.log('Venue data:', venueData);
           setVenue(venueData);
         }
 
         if (event.artistIds?.length) {
-          console.log('Fetching artist:', event.artistIds[0]);
           const artistData = await getArtistById(event.artistIds[0]);
-          console.log('Artist data:', artistData);
           setArtist(artistData);
 
           if (artistData) {

@@ -10,7 +10,7 @@ import {
   SheetHeader
 } from "@/components/ui/sheet";
 import { useState } from 'react';
-import { CreateEventWizard } from './CreateEventWizard';  // Make sure this path is correct
+import { CreateEventWizard } from './NewEventWizard';  // Make sure this path is correct
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface AddEventButtonProps {

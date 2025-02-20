@@ -1,3 +1,4 @@
+// src/components/ui/date-select.tsx
 import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
@@ -14,6 +15,14 @@ interface DateSelectProps {
   date?: Date
   onSelect?: (date: Date | undefined) => void
   className?: string
+  conflicts?: Array<{
+    type: 'venue' | 'artist';
+    name: string;
+    existingEvent: {
+      name: string;
+      startTime: string;
+    };
+  }>;
 }
 
 function getOrdinal(n: number): string {
@@ -28,13 +37,21 @@ function formatDate(date: Date): string {
   return formatted.replace(` ${day} `, ` ${getOrdinal(day)} `)
 }
 
-export function DateSelect({ date, onSelect, className }: DateSelectProps) {
+export function DateSelect({ date, onSelect, className, conflicts }: DateSelectProps) {
   const [open, setOpen] = React.useState(false)
 
   const handleSelect = (date: Date | undefined) => {
     onSelect?.(date)
     setOpen(false)
   }
+
+  // Calculate the minimum date (today at midnight)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const disabledDays = [
+    { before: today } // Disable all dates before today
+  ]
 
   return (
     <div className="relative">
@@ -43,7 +60,7 @@ export function DateSelect({ date, onSelect, className }: DateSelectProps) {
           <Button
             variant="outline"
             className={cn(
-              "w-full justify-start text-left font-normal",
+              "w-max justify-start text-left font-normal",
               open && "ring-2 ring-primary border-transparent",
               !date && "text-muted-foreground",
               className
@@ -64,9 +81,22 @@ export function DateSelect({ date, onSelect, className }: DateSelectProps) {
             mode="single"
             selected={date}
             onSelect={handleSelect}
+            disabled={disabledDays}
             showOutsideDays={true}
             className="p-0"
             weekStartsOn={1}
+            footer={conflicts && conflicts.length > 0 ? (
+              <div className="mt-4 p-2 bg-yellow-500/10 rounded-md border border-yellow-500/50">
+                <p className="text-sm font-medium text-yellow-500">Scheduling conflicts:</p>
+                <ul className="mt-1 text-sm text-muted-foreground">
+                  {conflicts.map((conflict, index) => (
+                    <li key={index}>
+                      {conflict.type === 'venue' ? 'Venue' : 'Artist'} {conflict.name} has event "{conflict.existingEvent.name}" at {conflict.existingEvent.startTime}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : undefined}
             classNames={{
               months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
               month: "space-y-4",
@@ -92,7 +122,7 @@ export function DateSelect({ date, onSelect, className }: DateSelectProps) {
               day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
               day_today: "bg-accent text-accent-foreground",
               day_outside: "text-muted-foreground opacity-50",
-              day_disabled: "text-muted-foreground opacity-50",
+              day_disabled: "text-muted-foreground opacity-50 cursor-not-allowed",
               day_hidden: "invisible"
             }}
           />

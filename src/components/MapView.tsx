@@ -12,6 +12,7 @@ interface MapViewProps {
   onEventSelect: (event: Event | null) => void;
   userLocation: google.maps.LatLngLiteral | null;
   onMapLoad?: (map: google.maps.Map | null) => void;
+  dateRange?: { startDate: string; endDate: string };
 }
 
 function MapComponent({
@@ -159,11 +160,9 @@ function ClusteredMarkers({
   return null;
 }
 
-
-
 const defaultCenter = { lat: 54.093409, lng: -2.89479 };
 
-export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps) {
+export function MapView({ onEventSelect, userLocation, onMapLoad, dateRange }: MapViewProps) {
   const [center, setCenter] = useState<google.maps.LatLngLiteral>(defaultCenter);
   const [zoom, setZoom] = useState(6);
   const [error, setError] = useState<string | null>(null);
@@ -204,23 +203,22 @@ export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps
     }
   }, [userLocation]);
 
-  // Fetch events within map bounds
+  // Fetch events within map bounds and date range
   useEffect(() => {
     const fetchEvents = async () => {
       if (!mapInstance) return;
+      if (!dateRange) return;
 
       try {
         const bounds = mapInstance.getBounds();
         if (!bounds) return;
 
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-
-        // Query events
+        // Query events with date filter
         const eventsRef = collection(db, COLLECTIONS.EVENTS);
         const q = query(
           eventsRef,
-          where('date', '>=', now.toISOString()),
+          where('date', '>=', dateRange.startDate),
+          where('date', '<=', dateRange.endDate),
           orderBy('date', 'asc'),
           limit(100)
         );
@@ -246,7 +244,7 @@ export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps
       }
     };
 
-    if (mapInstance) {
+    if (mapInstance && dateRange) {
       // Initial fetch
       fetchEvents();
 
@@ -259,14 +257,14 @@ export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps
         google.maps.event.removeListener(listener);
       };
     }
-  }, [mapInstance]);
+  }, [mapInstance, dateRange]);
 
   const handleMarkerClick = useCallback((event: Event, venueEvents?: Event[]) => {
     if (!mapInstance) return;
   
     mapInstance.panTo(event.location);
     setSelectedEvent(event);
-    setVenueEvents(venueEvents || []); // Add this state if you haven't already
+    setVenueEvents(venueEvents || []);
     onEventSelect(event);
   }, [mapInstance, onEventSelect]);
 
@@ -297,16 +295,16 @@ export function MapView({ onEventSelect, userLocation, onMapLoad }: MapViewProps
               />
               {selectedEvent && mapInstance && (
                <EventInfoWindow
-               event={selectedEvent}
-               allVenueEvents={venueEvents}
-               map={mapInstance}
-               onClose={handleInfoWindowClose}
-               onEventChange={(newEvent) => {
-                 setSelectedEvent(newEvent);
-                 onEventSelect(newEvent);
-               }}
-               position={selectedEvent.location}
-                />
+                 event={selectedEvent}
+                 allVenueEvents={venueEvents}
+                 map={mapInstance}
+                 onClose={handleInfoWindowClose}
+                 onEventChange={(newEvent) => {
+                   setSelectedEvent(newEvent);
+                   onEventSelect(newEvent);
+                 }}
+                 position={selectedEvent.location}
+               />
               )}
             </>
           )}

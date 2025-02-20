@@ -11,6 +11,9 @@ export interface BaseVenue {
   };
   address: string;
   postcode?: string;
+  standardStartTime?: string;
+  standardEndTime?: string;
+  standardTicketPrice?: string;
 }
 
 export interface Venue extends BaseVenue {
@@ -97,6 +100,14 @@ export interface EventFormData {
   ticketPrice?: string;
   ticketUrl?: string;
   eventUrl?: string;
+  dateConflicts?: Array<{
+    type: 'venue' | 'artist';
+    name: string;
+    existingEvent: {
+        name: string;
+        startTime: string;
+    };
+}>;
 }
 
 export interface VenueDetails extends Venue {

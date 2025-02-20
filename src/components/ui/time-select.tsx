@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
-import { formatTime, convertTo24Hour } from '@/lib/utils/date-utils';
+import { formatTime } from '@/lib/utils/date-utils';
 import { Clock, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Popover,
@@ -11,9 +11,11 @@ import {
 } from "@/components/ui/popover";
 
 export interface TimeSelectProps {
-  value?: string;        // Make value optional
+  value?: string;
   onChange: (time: string) => void;
   className?: string;
+  defaultStartIndex?: number;
+  placeholder?: string;
 }
 
 function convertTo12Hour(time24: string): string {
@@ -25,12 +27,14 @@ function convertTo12Hour(time24: string): string {
 }
 
 export function TimeSelect({
-  value = '', // Provide default empty string
+  value,
   onChange,
-  className
+  className,
+  defaultStartIndex = 38,
+  placeholder = "Select time"  // Add default
 }: TimeSelectProps) {
   const [open, setOpen] = useState(false);
-  const [startIndex, setStartIndex] = useState(0);
+  const [startIndex, setStartIndex] = useState(defaultStartIndex);
   const listRef = useRef<HTMLDivElement>(null);
   const [touchStartY, setTouchStartY] = useState(0);
 
@@ -82,6 +86,11 @@ export function TimeSelect({
     handleScroll(e.deltaY > 0 ? 'down' : 'up');
   };
 
+  const handleTimeSelect = (time: string) => {
+    onChange(time);
+    setOpen(false);
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -94,7 +103,7 @@ export function TimeSelect({
           )}
         >
           <Clock className="mr-2 h-4 w-4" />
-          {value ? convertTo12Hour(value) : 'Select time'}
+          {value ? convertTo12Hour(value) : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -128,10 +137,7 @@ export function TimeSelect({
                   "hover:bg-accent hover:text-accent-foreground",
                   time === value && "bg-primary text-primary-foreground"
                 )}
-                onClick={() => {
-                  onChange(time);
-                  setOpen(false);
-                }}
+                onClick={() => handleTimeSelect(time)}
               >
                 {convertTo12Hour(time)}
               </div>

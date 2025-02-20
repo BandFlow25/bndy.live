@@ -1,4 +1,4 @@
-//src\components\events\steps\EventDetailsStep.tsx
+//src\components\events\createwizardsteps\EventDetailsStep.tsx
 import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,8 @@ export function EventDetailsStep({ form, loading, onSubmit, onBack }: EventDetai
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+
+        
         {/* Event Name */}
         <FormField
           control={form.control}
