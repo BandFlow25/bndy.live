@@ -36,6 +36,17 @@ function MapComponent({
         zoom,
         gestureHandling: 'greedy',
         clickableIcons: false,
+        // Improve mobile performance
+        maxZoom: 18,
+        minZoom: 3,
+        zoomControl: true,
+        mapTypeControl: false,
+        scaleControl: true,
+        streetViewControl: false,
+        rotateControl: false,
+        fullscreenControl: false,
+        // Optimize for mobile
+        tilt: 0,
         styles: [
           { featureType: "all", elementType: "all", stylers: [{ hue: "#242a38" }] },
           { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
@@ -45,6 +56,7 @@ function MapComponent({
           { featureType: "poi.business", elementType: "all", stylers: [{ visibility: "off" }] }
         ]
       });
+
       setMap(mapInstance);
       if (onMapLoad) onMapLoad(mapInstance);
     }
@@ -59,7 +71,7 @@ function MapComponent({
 
   return (
     <>
-      <div ref={ref} style={{ width: '100%', height: '100vh' }} />
+      <div ref={ref} style={{ width: '100%', height: '100vh', background: '#242a38' }} />
       {map && children?.(map)}
     </>
   );
@@ -74,7 +86,17 @@ function ClusteredMarkers({
   events: Event[];
   onMarkerClick: (event: Event, allEvents?: Event[]) => void;
 }) {
+  const markersRef = useRef<google.maps.Marker[]>([]);
+  const clustererRef = useRef<MarkerClusterer | null>(null);
+
   useEffect(() => {
+    // Clean up previous markers and clusterer
+    if (clustererRef.current) {
+      clustererRef.current.clearMarkers();
+    }
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
+
     // Group events by venue location
     const eventsByLocation = events.reduce((acc, event) => {
       const key = `${event.location.lat},${event.location.lng}`;
@@ -85,12 +107,16 @@ function ClusteredMarkers({
       return acc;
     }, {} as Record<string, Event[]>);
 
-    // Create markers for each unique location
+    // Store total events count for each marker for clustering
+    const markerEventCounts = new Map<google.maps.Marker, number>();
+
+    // Create markers with optimized settings
     const markers = Object.entries(eventsByLocation).map(([locationKey, locationEvents]) => {
       const [lat, lng] = locationKey.split(',').map(Number);
       
-      return new google.maps.Marker({
+      const marker = new google.maps.Marker({
         position: { lat, lng },
+        optimized: true,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 10,
@@ -104,28 +130,45 @@ function ClusteredMarkers({
           color: "#FFFFFF",
           fontSize: "12px",
           fontWeight: "bold"
-        } : undefined,
-        map
+        } : undefined
       });
-    });
 
-    // Add click listeners
-    Object.entries(eventsByLocation).forEach(([locationKey, locationEvents], index) => {
-      markers[index].addListener('click', () => {
+      // Store the event count for this marker
+      markerEventCounts.set(marker, locationEvents.length);
+
+      // Add click listener
+      marker.addListener('click', () => {
         onMarkerClick(locationEvents[0], locationEvents);
       });
+
+      markersRef.current.push(marker);
+      return marker;
     });
 
-    // Create clusterer with the markers
-    const clusterer = new MarkerClusterer({
+    // Create clusterer with optimized settings
+    clustererRef.current = new MarkerClusterer({
       map,
       markers,
       algorithm: new GridAlgorithm({
-        maxZoom: 15,
+        maxZoom: 16,
         gridSize: 60
       }),
+      onClusterClick: (_, cluster) => {
+        const position = cluster.position;
+        map.panTo(position);
+        map.setZoom(map.getZoom()! + 1);
+      },
       renderer: {
-        render: ({ count, position }) => {
+        render: ({ count, position, markers: clusterMarkers }) => {
+          // Calculate total events in the cluster
+          const totalEvents = clusterMarkers.reduce((total, marker) => {
+            // Ensure marker is a google.maps.Marker before getting from Map
+            if (marker instanceof google.maps.Marker) {
+              return total + (markerEventCounts.get(marker) || 1);
+            }
+            return total;
+          }, 0);
+
           return new google.maps.Marker({
             position,
             icon: {
@@ -134,23 +177,25 @@ function ClusteredMarkers({
               fillOpacity: 1,
               strokeWeight: 2,
               strokeColor: "#FFFFFF",
-              scale: count > 1 ? 22 : 10,
+              scale: totalEvents > 1 ? 22 : 10,
             },
-            label: count > 1 ? {
-              text: String(count),
+            label: totalEvents > 1 ? {
+              text: String(totalEvents),
               color: "#FFFFFF",
               fontSize: "12px",
               fontWeight: "bold"
-            } : undefined
+            } : undefined,
+            optimized: true
           });
         }
       }
     });
 
-    // Cleanup
     return () => {
-      clusterer.clearMarkers();
-      markers.forEach(marker => {
+      if (clustererRef.current) {
+        clustererRef.current.clearMarkers();
+      }
+      markersRef.current.forEach(marker => {
         google.maps.event.clearListeners(marker, 'click');
         marker.setMap(null);
       });
@@ -262,7 +307,13 @@ export function MapView({ onEventSelect, userLocation, onMapLoad, dateRange }: M
   const handleMarkerClick = useCallback((event: Event, venueEvents?: Event[]) => {
     if (!mapInstance) return;
   
-    mapInstance.panTo(event.location);
+    // Move map down slightly to ensure info window visibility
+    const newCenter = {
+      lat: event.location.lat - 0.002, // Adjust value based on zoom level
+      lng: event.location.lng
+    };
+  
+    mapInstance.panTo(newCenter);
     setSelectedEvent(event);
     setVenueEvents(venueEvents || []);
     onEventSelect(event);

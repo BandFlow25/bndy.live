@@ -75,7 +75,7 @@ export function EventInfoWindow({
   useEffect(() => {
     const infoWindow = new google.maps.InfoWindow({
       position: position || event.location,
-      pixelOffset: new google.maps.Size(0, -40),
+      pixelOffset: new google.maps.Size(0, -window.innerHeight * 0.2), // Adjust based on header height
       maxWidth: 320,
     });
 

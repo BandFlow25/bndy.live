@@ -3,6 +3,48 @@
 @tailwind components;
 @tailwind utilities;
 
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    /* Fix for iOS 100vh issue */
+    min-height: -webkit-fill-available;
+  }
+  
+  .h-screen {
+    /* Fix for iOS 100vh issue */
+    height: -webkit-fill-available;
+  }
+}
+
+/* iOS-specific map container fixes */
+.map-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  z-index: 0;
+  /* Force hardware acceleration */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* Prevent elastic scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent unwanted scrolling/bouncing on iOS */
+html, body {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+  -webkit-overflow-scrolling: none;
+}
+
 @layer base {
   :root {
     --background: 222 47% 11%;
