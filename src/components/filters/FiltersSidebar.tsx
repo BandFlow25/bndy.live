@@ -75,10 +75,10 @@ const [autoCompleteText, setAutoCompleteText] = useState(""); // New state for i
     }
 };
 
-  const selectArtist = (name: string) => {
-    setArtistSearch(name); // Auto-fill input field
-    setArtistResults([]); // Hide suggestions
-  };
+  // const selectArtist = (name: string) => {
+  //   setArtistSearch(name); // Auto-fill input field
+  //   setArtistResults([]); // Hide suggestions
+  // };
 
   return (
     <div className={`fixed left-0 top-0 w-72 h-full bg-background p-5 shadow-lg transition-transform ${isOpen ? "side-panel-open" : "side-panel-left"} side-panel`}>
