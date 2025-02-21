@@ -268,6 +268,7 @@ export function MapView({ onEventSelect, userLocation, onMapLoad, dateRange }: M
           limit(100)
         );
 
+        console.log("MapView Query:", q);
         const snapshot = await getDocs(q);
         const loadedEvents = snapshot.docs
           .map(doc => ({

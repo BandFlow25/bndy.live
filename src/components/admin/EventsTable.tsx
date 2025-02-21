@@ -49,7 +49,7 @@ export function EventsTable() {
         venueName: venue ? venue.name : 'Unknown Venue',
       };
     }));
-    
+    console.log("EventsTable Query:", collection(db, "events"));
     setEvents(eventData);
   };
 

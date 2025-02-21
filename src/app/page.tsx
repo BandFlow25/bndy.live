@@ -119,7 +119,7 @@ export default function Home() {
 
   return (
     <div className="relative h-screen">
-      <div className="fixed top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-10">
         <Link href="/admin">
           <Button variant="outline" className="bg-background/80 backdrop-blur-sm">
             <Settings className="w-4 h-4 mr-2" />
@@ -128,8 +128,14 @@ export default function Home() {
         </Link>
       </div>
       
-      <AddEventButton map={mapInstance} />
-      <FilterButton onFilterChange={setDateFilter} />
+      <div className="absolute bottom-4 left-4 z-50">
+        <FilterButton onFilterChange={setDateFilter} />
+      </div>
+  
+      <div className="absolute bottom-4 right-4 z-50">
+        <AddEventButton map={mapInstance} />
+      </div>
+  
       <MapView
         onEventSelect={setSelectedEvent}
         userLocation={userLocation}

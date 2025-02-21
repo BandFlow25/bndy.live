@@ -39,7 +39,8 @@ export default function RootLayout({
       <body>
         <ErrorBoundary>
           <Header />
-          <main className="map-container mt-[72px]"> {/* Adjust 72px if needed based on header height */}
+          <main className="pt-[72px] flex flex-col min-h-screen">
+
 
             {children}
           </main>

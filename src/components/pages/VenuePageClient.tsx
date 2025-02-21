@@ -81,7 +81,8 @@ export function VenuePageClient({ id }: VenuePageClientProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 pt-[96px] max-w-4xl">
+
       {/* Venue Header */}
       <div className="bg-card rounded-lg p-6 mb-8 border border-primary/20">
         <h1 className="text-2xl font-bold mb-4">{venue.name}</h1>

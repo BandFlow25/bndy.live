@@ -92,3 +92,36 @@ export function formatEventDate(date: Date): string {
     const date = new Date(dateStr);
     return isNaN(date.getTime()) ? null : date;
   }
+
+// For Event Importer
+  export function parseDate(dateText: string): string {
+    try {
+      // Handle various date formats
+      // First, try direct parsing
+      const date = new Date(dateText);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+  
+      // Try UK format (DD/MM/YYYY)
+      const ukFormat = /(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/;
+      const ukMatch = dateText.match(ukFormat);
+      if (ukMatch) {
+        const [_, day, month, year] = ukMatch;
+        const fullYear = year.length === 2 ? '20' + year : year;
+        const date = new Date(`${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+        return date.toISOString().split('T')[0];
+      }
+  
+      // Try text format (e.g., "Thursday, February 20, 2025")
+      const textDate = new Date(dateText);
+      if (!isNaN(textDate.getTime())) {
+        return textDate.toISOString().split('T')[0];
+      }
+  
+      throw new Error(`Unable to parse date: ${dateText}`);
+    } catch (error) {
+      console.error('Date parsing error:', error);
+      return new Date().toISOString().split('T')[0]; // Fallback to today
+    }
+  }

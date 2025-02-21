@@ -80,7 +80,8 @@ export function ArtistPageClient({ id }: ArtistPageClientProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 pt-[96px] max-w-4xl">
+
 
       {/* Artist Header */}
       <div className="bg-card rounded-lg p-6 mb-8 border border-primary/20 flex items-center gap-6">

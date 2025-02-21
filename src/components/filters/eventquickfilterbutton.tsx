@@ -99,6 +99,7 @@ export function FilterButton({ onFilterChange }: FilterButtonProps) {
   const [selectedFilter, setSelectedFilter] = useState("this_week");
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
+  
   const handleFilterSelect = (filter: string) => {
     setSelectedFilter(filter);
     const { startDate, endDate } = getDateRangeForFilter(filter);
@@ -123,12 +124,12 @@ export function FilterButton({ onFilterChange }: FilterButtonProps) {
               </Button>
             ))}
           {/* More Filters Button */}
-          <Button
+          {/* <Button
             className="w-full px-4 py-2 rounded-md shadow-md bg-primary text-white animate-pulse"
             onClick={() => setSidebarOpen(true)}
           >
             More Filters
-          </Button>
+          </Button> */}
         </div>
       )}
 

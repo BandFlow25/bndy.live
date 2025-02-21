@@ -87,8 +87,8 @@ export function VenuesTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {venues.map((venue) => (
-            <TableRow key={venue.id}>
+        {venues.map((venue, index) => (
+  <TableRow key={venue.id || `venue-${index}`}>
               <TableCell>
                 {editingId === venue.id ? (
                   <Input value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />

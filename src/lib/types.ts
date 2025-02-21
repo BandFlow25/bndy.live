@@ -14,6 +14,9 @@ export interface BaseVenue {
   standardStartTime?: string;
   standardEndTime?: string;
   standardTicketPrice?: string;
+  websiteUrl?: string;  // Added this field
+  facebookUrl?: string; // Adding this while we're at it
+  instagramUrl?: string; // And this
 }
 
 export interface Venue extends BaseVenue {
@@ -140,4 +143,37 @@ export interface VenueDetails extends Venue {
 
 export interface ArtistDetails extends Artist {
   events?: Event[];
+}
+
+
+
+
+export interface ImportMatch<T> {
+  id?: string;
+  name: string;
+  confidence: number;
+  isNew?: boolean;
+  data?: Partial<T>;
+}
+
+export interface ProcessedEvent {
+  id: string;
+  artist: string;
+  venue: string;
+  date: string;
+  time?: string;
+  ticketPrice?: string;
+  ticketUrl?: string;
+  status: 'pending' | 'processing' | 'ready' | 'error';
+  venueMatch?: ImportMatch<Venue>;
+  artistMatch?: ImportMatch<Artist>;
+  conflicts?: Array<{
+    type: 'venue' | 'artist' | 'exact_duplicate';
+    name: string;
+    existingEvent: {
+      name: string;
+      startTime: string;
+    };
+  }>;
+  error?: string;
 }
