@@ -33,6 +33,7 @@ export function DateStep({ form, onComplete }: DateStepProps) {
                 venue: form.getValues('venue'),
                 artists: form.getValues('artists'),
                 date: dateStr,
+                isOpenMic: form.getValues('isOpenMic'),
             });
 
             console.log("✅ Conflict Check Result:", newConflicts);
