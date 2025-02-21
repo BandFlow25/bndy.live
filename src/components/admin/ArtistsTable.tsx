@@ -8,95 +8,95 @@ import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { Pencil, Trash2, Save, X } from 'lucide-react';
 import {
- AlertDialog,
- AlertDialogAction,
- AlertDialogCancel,
- AlertDialogContent,
- AlertDialogDescription,
- AlertDialogFooter,
- AlertDialogHeader,
- AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 interface Artist {
- id: string;
- name: string;
- genres?: string[];
- facebookUrl?: string;
- instagramUrl?: string;
- spotifyUrl?: string;
- websiteUrl?: string;
- createdAt: string;
- updatedAt: string;
+  id: string;
+  name: string;
+  genres?: string[];
+  facebookUrl?: string;
+  instagramUrl?: string;
+  spotifyUrl?: string;
+  websiteUrl?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export function ArtistsTable() {
- const [artists, setArtists] = useState<Artist[]>([]);
- const [editingId, setEditingId] = useState<string | null>(null);
- const [editData, setEditData] = useState<Partial<Artist>>({});
- const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
- const [loading, setLoading] = useState(false);
- 
- useEffect(() => {
-   loadArtists();
- }, []);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Partial<Artist>>({});
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
- const loadArtists = async () => {
-   setLoading(true);
-   try {
-     const snapshot = await getDocs(collection(db, COLLECTIONS.ARTISTS));
-     const artistData = snapshot.docs.map(doc => ({
-       id: doc.id,
-       ...doc.data()
-     })) as Artist[];
-     
-     // Sort artists alphabetically by name
-     const sortedArtists = artistData.sort((a, b) => 
-       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-     );
-     
-     setArtists(sortedArtists);
-   } catch (error) {
-     console.error('Error loading artists:', error);
-   } finally {
-     setLoading(false);
-   }
- };
+  useEffect(() => {
+    loadArtists();
+  }, []);
 
- const handleEdit = (artist: Artist) => {
-   setEditingId(artist.id);
-   setEditData(artist);
- };
+  const loadArtists = async () => {
+    setLoading(true);
+    try {
+      const snapshot = await getDocs(collection(db, COLLECTIONS.ARTISTS));
+      const artistData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Artist[];
 
- const handleSave = async (id: string) => {
-   setLoading(true);
-   try {
-     const artistRef = doc(db, COLLECTIONS.ARTISTS, id);
-     await updateDoc(artistRef, {
-       ...editData,
-       updatedAt: new Date().toISOString()
-     });
-     setEditingId(null);
-     loadArtists(); // This will re-sort the list
-   } catch (error) {
-     console.error('Error updating artist:', error);
-   } finally {
-     setLoading(false);
-   }
- };
+      // Sort artists alphabetically by name
+      const sortedArtists = artistData.sort((a, b) =>
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+      );
 
- const handleDelete = async (id: string) => {
-   setLoading(true);
-   try {
-     await deleteDoc(doc(db, COLLECTIONS.ARTISTS, id));
-     setDeleteConfirm(null);
-     loadArtists(); // This will re-sort the list
-   } catch (error) {
-     console.error('Error deleting artist:', error);
-   } finally {
-     setLoading(false);
-   }
- };
+      setArtists(sortedArtists);
+    } catch (error) {
+      console.error('Error loading artists:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (artist: Artist) => {
+    setEditingId(artist.id);
+    setEditData(artist);
+  };
+
+  const handleSave = async (id: string) => {
+    setLoading(true);
+    try {
+      const artistRef = doc(db, COLLECTIONS.ARTISTS, id);
+      await updateDoc(artistRef, {
+        ...editData,
+        updatedAt: new Date().toISOString()
+      });
+      setEditingId(null);
+      loadArtists(); // This will re-sort the list
+    } catch (error) {
+      console.error('Error updating artist:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    setLoading(true);
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.ARTISTS, id));
+      setDeleteConfirm(null);
+      loadArtists(); // This will re-sort the list
+    } catch (error) {
+      console.error('Error deleting artist:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div>
       <Table>
@@ -109,8 +109,8 @@ export function ArtistsTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {artists.map((artist) => (
-            <TableRow key={artist.id}>
+          {artists.map((artist, index) => (
+            <TableRow key={artist.id || `artist-${index}`}>
               <TableCell>
                 {editingId === artist.id ? (
                   <Input

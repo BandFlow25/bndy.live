@@ -38,22 +38,7 @@ export function EventDetailsStep({ form, loading, onSubmit, onBack }: EventDetai
   const venue = form.watch('venue');
   const artists = form.watch('artists');
 
-  // Check for conflicts when date or time changes
-  useEffect(() => {
-    const checkConflicts = async () => {
-      if (date && startTime && venue) {
-        const foundConflicts = await checkEventConflicts({
-          venue,
-          artists: artists as Artist[],  // If needed, ensure proper type casting
-          date,
-          startTime
-        });
-        setConflicts(foundConflicts);
-      }
-    };
 
-    checkConflicts();
-  }, [date, startTime, venue, artists]);
 
   const handleSubmit = async (data: EventFormData) => {
     if (conflicts.length > 0) {

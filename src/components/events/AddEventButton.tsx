@@ -10,7 +10,7 @@ import {
   SheetHeader
 } from "@/components/ui/sheet";
 import { useState } from 'react';
-import { CreateEventWizard } from './NewEventWizard';  // Make sure this path is correct
+import { NewEventWizard } from './NewEventWizard';  // Make sure this path is correct
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface AddEventButtonProps {
@@ -42,7 +42,7 @@ export function AddEventButton({ map }: AddEventButtonProps) {
             </SheetDescription>
           </SheetHeader>
         </VisuallyHidden>
-        {map && <CreateEventWizard map={map} onSuccess={() => setIsOpen(false)} />}
+        {map && <NewEventWizard map={map} onSuccess={() => setIsOpen(false)} />}
       </SheetContent>
     </Sheet>
   );

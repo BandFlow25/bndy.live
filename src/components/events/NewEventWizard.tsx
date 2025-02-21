@@ -1,12 +1,13 @@
-// src\components\events\NewEventWizard.tsx
+// src/components/events/NewEventWizard.tsx
 import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useToast } from "@/components/ui/use-toast";
 import { Form } from "@/components/ui/form";
 import { MapPin, Users, Calendar, Clock, Info } from 'lucide-react';
-import { VenueStep } from './createwizardsteps/VenueStep';
 import { formatEventDate, formatTime } from '@/lib/utils/date-utils';
-import { ArtistStep } from './createwizardsteps/OLDArtistStep';
+import { VenueStep } from './createwizardsteps/VenueStep';
+import { generateRecurringDates } from '@/lib/utils/event-utils';
+import { ArtistStep } from './createwizardsteps/ArtistStep';
 import { DateStep } from './createwizardsteps/DateStep';
 import { TimeStep } from './createwizardsteps/TimeStep';
 import { DetailsStep } from './createwizardsteps/DetailsStep';
@@ -30,7 +31,7 @@ const STEPS = [
     { id: 'details' as StepId, icon: <Info className="w-4 h-4" />, title: 'Details' }
 ] as const;
 
-export function CreateEventWizard({ map, onSuccess }: CreateEventWizardProps) {
+export function NewEventWizard({ map, onSuccess }: CreateEventWizardProps) {
     const [currentStep, setCurrentStep] = useState<StepId>('venue');
     const [loading, setLoading] = useState(false);
     const [completedSteps, setCompletedSteps] = useState<Set<StepId>>(new Set());
@@ -50,20 +51,22 @@ export function CreateEventWizard({ map, onSuccess }: CreateEventWizardProps) {
 
     const handleStepComplete = (stepId: StepId) => {
         setCompletedSteps(prev => new Set([...prev, stepId]));
+ 
     };
 
     const handleStepChange = (stepId: StepId) => {
-        if (completedSteps.has(stepId) ||
-            STEPS.findIndex(s => s.id === stepId) ===
-            STEPS.findIndex(s => s.id === currentStep) + 1) {
+        const currentIndex = STEPS.findIndex(s => s.id === currentStep);
+        const newIndex = STEPS.findIndex(s => s.id === stepId);
+    
+        if (newIndex === currentIndex + 1 || completedSteps.has(stepId)) { // ✅ Allows direct progression
             setCurrentStep(stepId);
         }
     };
-
+    
     const handleSubmit = async (data: EventFormData) => {
         setLoading(true);
         try {
-            // First create venue if it's a new one
+            // First create venue if it's new
             let venueId = data.venue.id;
             if (!venueId) {
                 const newVenue = await createVenue({
@@ -73,25 +76,48 @@ export function CreateEventWizard({ map, onSuccess }: CreateEventWizardProps) {
                     googlePlaceId: data.venue.googlePlaceId,
                 });
                 venueId = newVenue.id;
-                data.venue = newVenue; // Update the form data with the new venue
+                data.venue = newVenue;
             }
     
-            // Now create the event with the correct venue ID
-            const eventData = {
-                ...data,
-                venueId,
-                location: data.venue.location,
-                status: 'pending',
-                source: 'bndy.live' as const,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            };
+            if (data.recurring) {
+                // Generate all event dates
+                const dates = generateRecurringDates(
+                    data.date,
+                    data.recurring.endDate,
+                    data.recurring.frequency
+                );
     
-            await createEvent(eventData);
-            
+                // Create each event
+                await Promise.all(dates.map(async (date) => {
+                    const eventData = {
+                        ...data,
+                        date,
+                        venueId,
+                        location: data.venue.location,
+                        status: 'pending',
+                        source: 'bndy.live' as const,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                    };
+                    await createEvent(eventData);
+                }));
+            } else {
+                // Create single event as before
+                const eventData = {
+                    ...data,
+                    venueId,
+                    location: data.venue.location,
+                    status: 'pending',
+                    source: 'bndy.live' as const,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                };
+                await createEvent(eventData);
+            }
+    
             toast({
-                title: "Event Created!",
-                description: "Your event has been successfully added to the calendar.",
+                title: data.recurring ? "Recurring Events Created!" : "Event Created!",
+                description: "Successfully added to the calendar.",
             });
     
             if (map && data.venue.location) {
@@ -114,65 +140,89 @@ export function CreateEventWizard({ map, onSuccess }: CreateEventWizardProps) {
         }
     };
 
-    const title = useMemo(() => {
-        const formData = form.getValues();
+    // Dynamic title based on form state
+// In NewEventWizard.tsx, update the title useMemo:
+const title = useMemo(() => {
+    const formData = form.getValues();
+    const isOpenMic = formData.isOpenMic;
 
-        switch (currentStep) {
-            case 'venue':
-                return formData.venue.name ?
-                    `Event @ ${formData.venue.name}` :
-                    "Where's the event?";
-            case 'artists':
-                return formData.artists.length > 0 ?
-                    `${formData.artists[0]?.name} @ ${formData.venue.name}` :
-                    "Who's playing?";
-            case 'date':
+    switch (currentStep) {
+        case 'venue':
+            return formData.venue.name ? `Event @ ${formData.venue.name}` : "Where's the event?";
+        case 'artists':
+            if (isOpenMic) {
+                return `Open Mic @ ${formData.venue.name}`;
+            }
+            return formData.artists.length > 0 ?
+                `${formData.artists[0]?.name} @ ${formData.venue.name}` :
+                "Who's playing?";
+        case 'date':
+            if (isOpenMic) {
                 return formData.date ?
-                    `${formData.artists[0]?.name} @ ${formData.venue.name} - ${formatEventDate(new Date(formData.date))}` :
+                    `Open Mic @ ${formData.venue.name} - ${formatEventDate(new Date(formData.date))}` :
                     "When's the event?";
-            case 'time':
+            }
+            return formData.date ?
+                `${formData.artists[0]?.name} @ ${formData.venue.name} - ${formatEventDate(new Date(formData.date))}` :
+                "When's the event?";
+        case 'time':
+            if (isOpenMic) {
                 return formData.startTime ?
-                    `${formData.artists[0]?.name} @ ${formData.venue.name} - ${formatEventDate(new Date(formData.date))} @ ${formatTime(formData.startTime)}` :
+                    `Open Mic @ ${formData.venue.name} - ${formatEventDate(new Date(formData.date))} @ ${formatTime(formData.startTime)}` :
                     "What time?";
-            case 'details':
-                return `${formData.artists[0]?.name} @ ${formData.venue.name} - ${formatEventDate(new Date(formData.date))} @ ${formatTime(formData.startTime)}`;
-            default:
-                return "Create New Event";
-        }
-    }, [currentStep, form]);
+            }
+            return formData.startTime ?
+                `${formData.artists[0]?.name} @ ${formData.venue.name} - ${formatEventDate(new Date(formData.date))} @ ${formatTime(formData.startTime)}` :
+                "What time?";
+        case 'details':
+            if (isOpenMic) {
+                return `Open Mic @ ${formData.venue.name} - ${formatEventDate(new Date(formData.date))} @ ${formatTime(formData.startTime)}`;
+            }
+            return `${formData.artists[0]?.name} @ ${formData.venue.name} - ${formatEventDate(new Date(formData.date))} @ ${formatTime(formData.startTime)}`;
+        default:
+            return "Create New Event";
+    }
+}, [currentStep, form.watch(['venue', 'artists', 'date', 'startTime', 'isOpenMic'])]);  // Add isOpenMic to the watch list
 
     return (
         <div className="space-y-6">
-            {/* Step Indicator */}
+            {/* Progress Indicator */}
             <div className="relative flex items-center justify-between mb-8">
-                {STEPS.map((step, index) => (
-                    <React.Fragment key={step.id}>
-                        <div
-                            className={cn(
-                                "flex flex-col items-center",
-                                completedSteps.has(step.id) ? "cursor-pointer" : "cursor-default",
-                                currentStep === step.id ? "text-primary" :
-                                    completedSteps.has(step.id) ? "text-primary/70" : "text-muted-foreground"
-                            )}
-                            onClick={() => handleStepChange(step.id)}
-                        >
-                            <div className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
-                                currentStep === step.id ? "bg-primary text-white" :
-                                    completedSteps.has(step.id) ? "bg-primary/20 text-primary" : "bg-muted"
-                            )}>
-                                {step.icon}
+                {STEPS.map((step, index) => {
+                    const isCompleted = completedSteps.has(step.id);
+                    const isCurrent = step.id === currentStep;
+                    const isClickable = isCompleted || step.id === currentStep;
+                    const currentIndex = STEPS.findIndex(s => s.id === currentStep);
+
+                    return (
+                        <React.Fragment key={step.id}>
+                            <div
+                                className={cn(
+                                    "flex flex-col items-center",
+                                    isClickable ? "cursor-pointer" : "cursor-not-allowed opacity-50",
+                                    isCurrent ? "text-primary" :
+                                        isCompleted ? "text-primary/70" : "text-muted-foreground"
+                                )}
+                                onClick={() => isClickable && handleStepChange(step.id)}
+                            >
+                                <div className={cn(
+                                    "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+                                    isCurrent ? "bg-primary text-white" :
+                                        isCompleted ? "bg-primary/20 text-primary" : "bg-muted"
+                                )}>
+                                    {step.icon}
+                                </div>
+                                <span className="text-xs mt-1">{step.title}</span>
                             </div>
-                            <span className="text-xs mt-1">{step.title}</span>
-                        </div>
-                        {index < STEPS.length - 1 && (
-                            <div className={cn(
-                                "flex-1 h-0.5 mx-2",
-                                index < STEPS.findIndex(s => s.id === currentStep) ? "bg-primary" : "bg-muted"
-                            )} />
-                        )}
-                    </React.Fragment>
-                ))}
+                            {index < STEPS.length - 1 && (
+                                <div className={cn(
+                                    "flex-1 h-0.5 mx-2",
+                                    index < currentIndex ? "bg-primary" : "bg-muted"
+                                )} />
+                            )}
+                        </React.Fragment>
+                    );
+                })}
             </div>
 
             <div className="text-lg font-semibold mb-6">{title}</div>
@@ -185,7 +235,9 @@ export function CreateEventWizard({ map, onSuccess }: CreateEventWizardProps) {
                             form={form}
                             map={map}
                             onVenueSelect={(venue: Venue) => {
+                         
                                 form.setValue('venue', venue);
+                          
                                 // If it's a verified venue with standard times, populate those
                                 if (venue.id && venue.standardStartTime) {
                                     form.setValue('startTime', venue.standardStartTime);

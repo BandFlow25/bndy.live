@@ -4,7 +4,7 @@ import { Event } from "@/lib/types";
 import { MapView } from "@/components/MapView";
 import { Sidebar } from "@/components/Sidebar";
 import { AddEventButton } from '@/components/events/AddEventButton';
-import { FilterButton } from '@/components/ui/eventquickfilterbutton';
+import { FilterButton } from '@/components/filters/eventquickfilterbutton';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/config/firebase';
 import { COLLECTIONS } from '@/lib/constants';
@@ -57,7 +57,7 @@ export default function Home() {
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        console.log(`Fetching events for date range: ${dateRange.startDate} - ${dateRange.endDate}`);
+      
 
         const eventsRef = collection(db, COLLECTIONS.EVENTS);
         const q = query(
@@ -73,12 +73,12 @@ export default function Home() {
           ...doc.data()
         })) as Event[];
 
-        console.log(`Loaded ${loadedEvents.length} events:`, loadedEvents);
+      
 
         setEvents(loadedEvents);
         setFilteredEvents(loadedEvents);
       } catch (error) {
-        console.error('Error loading events:', error);
+        
       }
     };
 

@@ -24,7 +24,7 @@ interface VenueSearchProps {
   onVenueSelect: (venue: Venue) => void;
 }
 
-export function VenueSearch({ map, onVenueSelect }: VenueSearchProps) {
+export function xVenueSearch({ map, onVenueSelect }: VenueSearchProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [venues, setVenues] = useState<Venue[]>([]);

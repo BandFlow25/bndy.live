@@ -12,7 +12,10 @@ export function VenueCard({ venue, onSelect }: VenueCardProps) {
     return (
         <Card
             className="mb-2 cursor-pointer hover:bg-accent transition-colors"
-            onClick={() => onSelect(venue)}
+            onClick={() => {
+       
+                onSelect(venue);
+            }}
         >
             <CardContent className="p-4">
                 <div className="flex items-start justify-between">

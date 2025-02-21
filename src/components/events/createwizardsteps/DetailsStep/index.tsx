@@ -8,6 +8,7 @@ import { EventSection } from './EventSection';
 import { TicketSection } from './TicketSection';
 import { ConflictWarning } from '../DateStep/ConflictWarning';
 import type { EventFormData } from '@/lib/types';
+import { RecurringSection } from './RecurringSection';
 
 interface DetailsStepProps {
     form: UseFormReturn<EventFormData>;
@@ -19,6 +20,9 @@ export function DetailsStep({ form, loading, onSubmit }: DetailsStepProps) {
     const [showEventSection, setShowEventSection] = useState(false);
     const [showTicketSection, setShowTicketSection] = useState(false);
     const conflicts = form.watch('dateConflicts');
+    const hasBlockingConflict = conflicts?.some((c: { type: string }) => c.type === 'exact_duplicate');
+    const [showRecurringSection, setShowRecurringSection] = useState(false);
+
 
     return (
         <div className="space-y-8">
@@ -39,10 +43,16 @@ export function DetailsStep({ form, loading, onSubmit }: DetailsStepProps) {
                 onToggle={() => setShowTicketSection(prev => !prev)}
             />
 
+            <RecurringSection
+                form={form}
+                isExpanded={showRecurringSection}
+                onToggle={() => setShowRecurringSection(!showRecurringSection)}
+            />
+
             <Button
                 type="submit"
                 className="w-full"
-                disabled={loading}
+                disabled={loading || hasBlockingConflict}
                 onClick={() => form.handleSubmit(onSubmit)()}
             >
                 {loading ? 'Creating...' : 'Create Event'}

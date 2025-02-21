@@ -1,13 +1,13 @@
 // src/lib/types.ts
 
-// Venue Types
+// Venue Types - These look good as they are distinct use cases
 export interface BaseVenue {
   name: string;
   nameVariants?: string[];
   googlePlaceId?: string;
   location: {
-    lat: number;
-    lng: number;
+      lat: number;
+      lng: number;
   };
   address: string;
   postcode?: string;
@@ -27,9 +27,11 @@ export interface NewVenue extends BaseVenue {
   id?: string;  // Optional during creation
 }
 
-// Event Types
+// Event Types - Let's consolidate these
 export type EventSource = 'bndy.live' | 'user' | 'bndy.core';
+export type EventStatus = 'pending' | 'approved' | 'rejected';
 
+// This is our main Event type for database events
 export interface Event {
   id: string;
   name: string;
@@ -38,24 +40,67 @@ export interface Event {
   endTime?: string;
   venueId: string;
   venueName: string;
-  artistIds: string[];  // Array of artist IDs
+  artistIds: string[];
   location: {
-    lat: number;
-    lng: number;
+      lat: number;
+      lng: number;
   };
   description?: string;
   ticketPrice?: string;
   ticketUrl?: string;
   eventUrl?: string;
   source: EventSource;
-  status: 'pending' | 'approved' | 'rejected';
+  status: EventStatus;
   createdAt: string;
   updatedAt: string;
-  createdById?: string;    // Optional: ID of the user who created it
-  claimedByBandId?: string; // Optional: ID of the band that claimed this event
-  claimedAt?: string;      // Optional: When it was claimed
+  createdById?: string;
+  claimedByBandId?: string;
+  claimedAt?: string;
+  isOpenMic?: boolean;
 }
 
+// Recurring Event Types
+export type RecurringFrequency = 'weekly' | 'monthly';
+export interface RecurringEventConfig {
+    frequency: RecurringFrequency;
+    endDate: string;
+    // Optional settings if we need them later
+    skipDates?: string[];
+}
+
+// This is what we collect in the form
+export interface EventFormData {
+  venue: Venue;
+  artists: Artist[];
+  name: string;
+  date: string;
+  startTime: string;
+  endTime?: string;
+  description?: string;
+  ticketPrice?: string;
+  ticketUrl?: string;
+  eventUrl?: string;
+  isOpenMic?: boolean;
+  dateConflicts?: DateConflict[];  // Just for UI state
+  recurring?: RecurringEventConfig;
+}
+
+// Conflict handling
+export interface DateConflict {
+  type: 'venue' | 'artist';
+  name: string;
+  existingEvent: {
+      name: string;
+      startTime: string;
+  };
+}
+
+export interface EventConflictCheck {
+  venue: Venue;
+  artists: Artist[];
+  date: string;
+  isOpenMic?: boolean;
+}
 
 // Artist Types
 export interface Artist {
@@ -83,33 +128,12 @@ export interface EventFilters {
 export interface LocationFilter {
   searchRadius: number;
   center?: {
-    lat: number;
-    lng: number;
+      lat: number;
+      lng: number;
   };
 }
 
-// Form Data Types
-export interface EventFormData {
-  venue: Venue;
-  artists: Artist[];
-  name: string;
-  description: string; // Added this field
-  date: string;
-  startTime: string;
-  endTime?: string;
-  ticketPrice?: string;
-  ticketUrl?: string;
-  eventUrl?: string;
-  dateConflicts?: Array<{
-    type: 'venue' | 'artist';
-    name: string;
-    existingEvent: {
-        name: string;
-        startTime: string;
-    };
-}>;
-}
-
+// These can be useful for API responses but aren't core event types
 export interface VenueDetails extends Venue {
   events?: Event[];
 }

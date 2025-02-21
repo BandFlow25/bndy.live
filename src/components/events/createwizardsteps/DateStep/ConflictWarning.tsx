@@ -1,10 +1,10 @@
 // src/components/events/steps/DateStep/ConflictWarning.tsx
 
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, XCircle } from 'lucide-react';
 
 interface ConflictWarningProps {
     conflicts: Array<{
-        type: 'venue' | 'artist';
+        type: 'venue' | 'artist' | 'exact_duplicate';
         name: string;
         existingEvent: {
             name: string;
@@ -14,32 +14,43 @@ interface ConflictWarningProps {
 }
 
 export function ConflictWarning({ conflicts }: ConflictWarningProps) {
+    if (!conflicts || conflicts.length === 0) return null;
+    console.log("🖥 Rendering ConflictWarning Component with:", conflicts);
+
+    const isBlockingConflict = conflicts.some(c => c.type === "exact_duplicate");
+
     return (
-        <div className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-4">
-            <div className="flex gap-3">
-                <AlertTriangle className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+        <div className={`mt-4 p-4 border ${isBlockingConflict ? "border-pink-500 bg-pink-100 text-pink-800" : "border-yellow-500 bg-yellow-100 text-yellow-800"} rounded-md shadow-md`}>
+            <div className="flex items-center gap-3">
+                {isBlockingConflict ? (
+                    <XCircle className="h-5 w-5 text-pink-600 flex-shrink-0" />
+                ) : (
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
+                )}
                 <div>
-                    <h3 className="font-medium text-yellow-500">
-                        {conflicts.length === 1 ? 'Scheduling Conflict Found' : `${conflicts.length} Scheduling Conflicts Found`}
+                    <h3 className="font-medium">
+                        {isBlockingConflict ? "❌ This event already exists!" : `${conflicts.length} Scheduling Conflicts Found`}
                     </h3>
-                    <ul className="mt-2 text-sm text-muted-foreground space-y-1">
+                    <ul className="mt-2 text-sm space-y-1">
                         {conflicts.map((conflict, index) => (
                             <li key={index} className="flex items-start gap-2">
-                                <span className="font-medium">
-                                    {conflict.type === 'venue' ? 'Venue' : 'Artist'}:
-                                </span>
+                                <strong>{conflict.type === "venue" ? "Venue" : conflict.type === "artist" ? "Artist" : "Duplicate Event"}:</strong>
                                 <span>
-                                    {conflict.name} has event "{conflict.existingEvent.name}" at {conflict.existingEvent.startTime}
+                                    {conflict.name} {conflict.existingEvent ? `has event "${conflict.existingEvent.name}" at ${conflict.existingEvent.startTime}` : ""}
                                 </span>
                             </li>
                         ))}
                     </ul>
-                    <p className="mt-2 text-sm text-yellow-500">
-                        You can still proceed, but please ensure there are no schedule clashes.
-                    </p>
+                    {!isBlockingConflict && (
+                        <p className="mt-2 text-sm font-semibold text-yellow-700">
+                            You can still proceed with creating this event.
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
+
+
 

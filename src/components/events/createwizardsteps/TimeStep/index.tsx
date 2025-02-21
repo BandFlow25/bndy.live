@@ -16,49 +16,54 @@ interface TimeStepProps {
 
 export function TimeStep({ form, onComplete }: TimeStepProps) {
     const [showEndTime, setShowEndTime] = useState(false);
-    const venue = form.getValues('venue');
 
-    // Use venue's standard times if available
-    useEffect(() => {
-        if (venue.standardStartTime) {
-            form.setValue('startTime', venue.standardStartTime);
+    const adjustTimes = (startTime: string, endTime: string) => {
+        const startMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
+        const endMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
+
+        if (startMinutes >= endMinutes) {
+            // If start time is after or equal to end time, set end time to 30 mins after
+            const newEndMinutes = startMinutes + 30;
+            const newEndHours = Math.floor(newEndMinutes / 60) % 24;
+            const newEndMins = newEndMinutes % 60;
+            const newEndTime = `${String(newEndHours).padStart(2, '0')}:${String(newEndMins).padStart(2, '0')}`;
+            form.setValue('endTime', newEndTime);
         }
-        if (venue.standardEndTime) {
-            form.setValue('endTime', venue.standardEndTime);
-            setShowEndTime(true);
-        }
-    }, [venue]);
+    };
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <FormField
-                    control={form.control}
-                    name="startTime"
-                    render={({ field }) => (
-                        <FormControl>
-                            <TimeSelect
-                                {...field}
-                                defaultStartIndex={38}
-                                placeholder="Add Start Time"
-                            />
-                        </FormControl>
-                    )}
-                />
+            <FormField
+                control={form.control}
+                name="startTime"
+                render={({ field }) => (
+                    <FormControl>
+                        <TimeSelect
+                            {...field}
+                            placeholder="Add Start Time"
+                            onChange={(time) => {
+                                field.onChange(time);
+                                if (showEndTime && form.getValues('endTime')) {
+                                    adjustTimes(time, form.getValues('endTime'));
+                                }
+                            }}
+                        />
+                    </FormControl>
+                )}
+            />
 
-                <div className="flex items-center space-x-2 ml-4">
-                    <Checkbox
-                        id="showEndTime"
-                        checked={showEndTime}
-                        onCheckedChange={(checked) => {
-                            setShowEndTime(checked as boolean);
-                            if (!checked) {
-                                form.setValue('endTime', undefined);
-                            }
-                        }}
-                    />
-                    <Label htmlFor="showEndTime">Add End Time</Label>
-                </div>
+            <div className="flex items-center space-x-2">
+                <Checkbox
+                    id="showEndTime"
+                    checked={showEndTime}
+                    onCheckedChange={(checked) => {
+                        setShowEndTime(checked as boolean);
+                        if (!checked) {
+                            form.setValue('endTime', undefined);
+                        }
+                    }}
+                />
+                <Label htmlFor="showEndTime">Add End Time</Label>
             </div>
 
             {showEndTime && (
@@ -69,8 +74,13 @@ export function TimeStep({ form, onComplete }: TimeStepProps) {
                         <FormControl>
                             <TimeSelect
                                 {...field}
-                                defaultStartIndex={44}
                                 placeholder="Add End Time"
+                                onChange={(time) => {
+                                    field.onChange(time);
+                                    if (form.getValues('startTime')) {
+                                        adjustTimes(form.getValues('startTime'), time);
+                                    }
+                                }}
                             />
                         </FormControl>
                     )}

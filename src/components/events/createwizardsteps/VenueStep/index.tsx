@@ -35,7 +35,9 @@ export function VenueStep({ form, map, onVenueSelect }: VenueStepProps) {
     };
 
     const handleVenueSelect = (venue: Venue) => {
+     
         onVenueSelect(venue);
+        
       };
 
     return (

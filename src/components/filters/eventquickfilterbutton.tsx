@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
+import { FiltersSidebar } from "@/components/filters/FiltersSidebar";
 
 const filters = [
   { label: "Today", value: "today" },
@@ -42,13 +43,35 @@ function getDateRangeForFilter(filter: string) {
       endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 6);
       break;
-    case "next_weekend":
-      const nextFridayOffset = (5 - now.getDay() + 7) % 7;
-      startDate.setDate(now.getDate() + nextFridayOffset);
-      endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 2);
-      break;
-    case "this_week":
+
+      case "next_weekend":
+        const today = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        let daysUntilNextFriday;
+      
+        if (today === 0) { // Today is Sunday
+          daysUntilNextFriday = 5; // Next Friday is 5 days away
+        } else if (today === 1) { // Monday
+          daysUntilNextFriday = 11;
+        } else if (today === 2) { // Tuesday
+          daysUntilNextFriday = 10;
+        } else if (today === 3) { // Wednesday
+          daysUntilNextFriday = 9;
+        } else if (today === 4) { // Thursday
+          daysUntilNextFriday = 8;
+        } else if (today === 5) { // Friday
+          daysUntilNextFriday = 7;
+        } else { // Saturday
+          daysUntilNextFriday = 6;
+        }
+      
+        startDate.setDate(now.getDate() + daysUntilNextFriday); // Next Friday
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 2); // Ends on Sunday
+      
+        // Ensure full-day coverage
+        endDate.setHours(23, 59, 59, 999);
+        break;
+        case "this_week":
       if (now.getDay() === 0) {
         startDate = new Date(now);
         endDate = new Date(now);
@@ -74,6 +97,7 @@ interface FilterButtonProps {
 export function FilterButton({ onFilterChange }: FilterButtonProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState("this_week");
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const handleFilterSelect = (filter: string) => {
     setSelectedFilter(filter);
@@ -85,27 +109,39 @@ export function FilterButton({ onFilterChange }: FilterButtonProps) {
   return (
     <div className="fixed bottom-4 left-4 z-50 flex flex-col items-center">
       {isExpanded && (
-        <div className="flex flex-col space-y-1 mb-1 transition-all duration-300">
-          {filters.filter(f => f.value !== selectedFilter).map(filter => (
-            <Button
-              key={filter.value}
-              variant={selectedFilter === filter.value ? "default" : "outline"}
-              className="w-full px-4 py-2 rounded-md shadow-md"
-              onClick={() => handleFilterSelect(filter.value)}
-            >
-              {filter.label}
-            </Button>
-          ))}
+        <div className="flex flex-col space-y-2 mb-2 transition-all duration-300">
+          {filters
+            .filter(f => f.value !== selectedFilter)
+            .map(filter => (
+              <Button
+                key={filter.value}
+                variant="outline"
+                className="w-full px-4 py-2 rounded-md shadow-md"
+                onClick={() => handleFilterSelect(filter.value)}
+              >
+                {filter.label}
+              </Button>
+            ))}
+          {/* More Filters Button */}
+          <Button
+            className="w-full px-4 py-2 rounded-md shadow-md bg-primary text-white animate-pulse"
+            onClick={() => setSidebarOpen(true)}
+          >
+            More Filters
+          </Button>
         </div>
       )}
 
-      <Button 
+      <Button
         className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-6 py-3 shadow-lg"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <Filter className="w-4 h-4 mr-2" />
         {filters.find(f => f.value === selectedFilter)?.label || "Filters"}
       </Button>
+
+      {/* Sidebar Component */}
+      <FiltersSidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
   );
 }
