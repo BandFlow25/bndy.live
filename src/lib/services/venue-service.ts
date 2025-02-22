@@ -5,7 +5,7 @@ import { COLLECTIONS } from '@/lib/constants';
 import { searchVenueWithIncreasingRadius } from './places-service';
 import type { Venue, NewVenue } from '@/lib/types';  // Import from central types file
 
-export async function searchVenues(searchTerm: string, map: google.maps.Map): Promise<Venue[]> {
+export async function searchVenues(searchTerm: string): Promise<Venue[]> {
   if (!searchTerm || searchTerm.length < 3) return [];
   
   try {
@@ -31,7 +31,7 @@ export async function searchVenues(searchTerm: string, map: google.maps.Map): Pr
     }
 
     // Only if no matches in bf_venues, search Places API
-    const placesResults = await searchVenueWithIncreasingRadius(searchTerm, map);
+    const placesResults = await searchVenueWithIncreasingRadius(searchTerm);
     const now = new Date().toISOString();
     
     return placesResults.map(place => ({

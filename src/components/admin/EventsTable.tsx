@@ -19,8 +19,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import { Event } from '@/lib/types';
+import { Input } from "@/components/ui/input";
 
 interface EventWithDetails extends Event {
   artistName: string;
@@ -31,6 +31,7 @@ export function EventsTable() {
   const [events, setEvents] = useState<EventWithDetails[]>([]);
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     loadEvents();
@@ -76,8 +77,22 @@ export function EventsTable() {
     }
   };
 
+  // Filter events based on search query (searching event name, artist name, or venue name)
+  const filteredEvents = events.filter(event =>
+    event.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.artistName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.venueName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div>
+      <Input
+        type="text"
+        placeholder="Search events..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="mb-4"
+      />
       <div className="flex justify-between mb-4">
         <h2 className="text-lg font-semibold">Events</h2>
         <Button
@@ -94,12 +109,12 @@ export function EventsTable() {
           <TableRow>
             <TableHead>
               <Checkbox
-                checked={selectedEvents.size === events.length && events.length > 0}
+                checked={selectedEvents.size === filteredEvents.length && filteredEvents.length > 0}
                 onCheckedChange={() => {
-                  if (selectedEvents.size === events.length) {
+                  if (selectedEvents.size === filteredEvents.length) {
                     setSelectedEvents(new Set());
                   } else {
-                    setSelectedEvents(new Set(events.map(e => e.id)));
+                    setSelectedEvents(new Set(filteredEvents.map(e => e.id)));
                   }
                 }}
               />
@@ -113,8 +128,8 @@ export function EventsTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-  {events.map((event, index) => (
-    <TableRow key={event.id || `event-${index}`}>
+          {filteredEvents.map((event, index) => (
+            <TableRow key={event.id || `event-${index}`}>
               <TableCell>
                 <Checkbox
                   checked={selectedEvents.has(event.id)}

@@ -25,7 +25,7 @@ export function VenueStep({ form, map, onVenueSelect }: VenueStepProps) {
 
         setLoading(true);
         try {
-            const results = await searchVenues(searchTerm, map);
+            const results = await searchVenues(searchTerm);
             setSearchResults(results);
         } catch (error) {
             console.error('Error searching venues:', error);

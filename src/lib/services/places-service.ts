@@ -1,9 +1,9 @@
-// src/lib/services/places-service.ts
 export async function searchVenueWithIncreasingRadius(
-  venueName: string,
-  map: google.maps.Map
+  venueName: string
 ): Promise<google.maps.places.PlaceResult[]> {
-  const service = new google.maps.places.PlacesService(map);
+  // Create a dummy div for the Places service - we don't need a real map!
+  const dummyDiv = document.createElement('div');
+  const service = new google.maps.places.PlacesService(dummyDiv);
   
   try {
     const results = await new Promise<google.maps.places.PlaceResult[]>((resolve, reject) => {

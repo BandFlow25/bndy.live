@@ -39,6 +39,7 @@ export function VenuesTable() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Venue>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     loadVenues();
@@ -73,8 +74,21 @@ export function VenuesTable() {
     }
   };
 
+  // Filter venues based on the search query
+  const filteredVenues = venues.filter(venue => 
+    venue.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (venue.address && venue.address.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
     <div>
+      <Input
+        type="text"
+        placeholder="Search venues..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="mb-4"
+      />
       <Table>
         <TableHeader>
           <TableRow>
@@ -87,8 +101,8 @@ export function VenuesTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-        {venues.map((venue, index) => (
-  <TableRow key={venue.id || `venue-${index}`}>
+          {filteredVenues.map((venue, index) => (
+            <TableRow key={venue.id || `venue-${index}`}>
               <TableCell>
                 {editingId === venue.id ? (
                   <Input value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />

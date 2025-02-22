@@ -6,8 +6,7 @@ import { MapPin, Clock, ExternalLink, Ticket } from 'lucide-react';
 import { ChevronDown, ChevronUp, Building2, Music } from 'lucide-react';
 import { getVenueById } from '@/lib/services/venue-service';
 import { getArtistById } from '@/lib/services/artist-service';
-import { extractFacebookUsername, getFacebookProfilePicUrl, checkImageExists } from '@/lib/utils/profilepic-utils';
-
+import { extractFacebookUsername, getFacebookProfilePicUrl } from '@/lib/utils/profilepic-utils';
 
 interface EventInfoWindowProps {
   event: Event;
@@ -44,15 +43,18 @@ export function EventInfoWindow({
     }
   }, [event.id, allVenueEvents]);
 
+  // Fetch venue + artist details (unless open mic)
   useEffect(() => {
     async function fetchDetails() {
       try {
+        // 1) Fetch venue if present
         if (event.venueId) {
           const venueData = await getVenueById(event.venueId);
           setVenue(venueData);
         }
 
-        if (event.artistIds?.length) {
+        // 2) If NOT open mic, fetch the first artist
+        if (!event.isOpenMic && event.artistIds?.length) {
           const artistData = await getArtistById(event.artistIds[0]);
           setArtist(artistData);
 
@@ -60,17 +62,16 @@ export function EventInfoWindow({
             const defaultName = `${artistData.name} @ ${event.venueName}`;
             setShouldShowEventName(event.name !== defaultName);
           }
+        } else {
+          // For open mic, always show the event name (e.g. "Open Mic Night @ Dandy Cock")
+          setShouldShowEventName(true);
         }
       } catch (error) {
         console.error('Error fetching details:', error);
-        if (error instanceof Error) {
-          console.error('Error message:', error.message);
-          console.error('Error stack:', error.stack);
-        }
       }
     }
     fetchDetails();
-  }, [event.venueId, event.artistIds, event.name, event.venueName]);
+  }, [event]);
 
   useEffect(() => {
     const infoWindow = new google.maps.InfoWindow({
@@ -89,10 +90,45 @@ export function EventInfoWindow({
     const buildingSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M9 22v-4h6v4"></path></svg>`;
     const musicSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`;
 
-
     const content = document.createElement('div');
     content.className = styles.infoWindow;
 
+    // Decide which image to show:
+    // - If open mic => /openmic.png
+    // - else if artist has facebook => profile pic
+    // - else no image
+    let artistImageHtml = '';
+    if (event.isOpenMic) {
+      artistImageHtml = `
+<img 
+  src="/openmic.png"
+  alt="Open Mic"
+  class="w-16 h-16 rounded-full flex-shrink-0"
+  onerror="this.style.display='none'"
+/>
+      `;
+    } else if (artist?.facebookUrl) {
+      artistImageHtml = `
+<img 
+  src="${getFacebookProfilePicUrl(extractFacebookUsername(artist.facebookUrl) || '')}"
+  alt="${artist?.name || 'Artist'}"
+  class="w-16 h-16 rounded-full flex-shrink-0"
+  onerror="this.style.display='none'"
+/>
+      `;
+    }
+
+    // Decide which name to show:
+    // - If open mic => "Open Mic"
+    // - else => artist?.name
+    const displayName = event.isOpenMic
+      ? 'Open Mic'
+      : (artist?.name || 'Loading...');
+
+    // If the event name is different from "Artist @ Venue," we show it as a title
+    const titleHtml = shouldShowEventName
+      ? `<h3 class="font-semibold text-lg text-white mb-2">${event.name}</h3>`
+      : '';
 
     content.innerHTML = `
     <div class="w-[300px] p-4 bg-[#1a1f2d] border border-[#FF6B00] rounded-lg shadow-lg relative">
@@ -104,24 +140,13 @@ export function EventInfoWindow({
         <!-- Event Title/Artist Section -->
         <div class="flex items-start justify-between">
           <div class="space-y-1">
-            ${shouldShowEventName ? `
-              <h3 class="font-semibold text-lg text-white mb-2">
-                ${event.name}
-              </h3>
-            ` : ''}
+            ${titleHtml}
             
             <!-- Artist, Venue, and Time Info -->
             <div class="flex items-start gap-3">
-              ${artist?.facebookUrl ? `
-                <img 
-                  src="${getFacebookProfilePicUrl(extractFacebookUsername(artist.facebookUrl) || '')}" 
-                  alt="${artist?.name || 'Artist'}"
-                  class="w-16 h-16 rounded-full border border-primary flex-shrink-0"
-                  onerror="this.style.display='none'"
-                />
-              ` : ''}
+              ${artistImageHtml}
               <div class="flex flex-col gap-1">
-                <span class="font-semibold text-base text-white">${artist?.name || 'Loading...'}</span>
+                <span class="font-semibold text-base text-white">${displayName}</span>
                 <div class="flex items-center gap-1 text-sm text-muted-foreground">
                   ${mapPinSvg}
                   <span>${venue?.name || 'Loading...'}</span>
@@ -143,12 +168,10 @@ export function EventInfoWindow({
           </div>
         </div>
   
-       
-  
         <!-- Ticket Section -->
         <div class="flex items-center gap-1 text-sm text-white">
           ${ticketSvg}
-          <span>${event.ticketPrice ? `£${event.ticketPrice}` : '£ree event'}</span>
+          <span>${event.ticketPrice ? `£\${event.ticketPrice}` : '£ree event'}</span>
           ${event.ticketUrl ? `
             <a href="${event.ticketUrl}" target="_blank" rel="noopener noreferrer" 
                class="ml-2 text-primary hover:underline">
@@ -217,26 +240,22 @@ export function EventInfoWindow({
         </div>
       </div>
     </div>
-  `;
-
-
+    `;
 
     infoWindow.setContent(content);
     infoWindow.open(map);
 
-
     google.maps.event.addListener(infoWindow, 'domready', () => {
+      // Toggle the "See More" section
       const toggleButton = document.getElementById("toggleSeeMore");
       const seeMoreOptions = document.getElementById("seeMoreOptions");
       const chevronIcon = document.getElementById("chevronIcon");
-    
+
       if (toggleButton && seeMoreOptions && chevronIcon) {
         toggleButton.addEventListener("click", () => {
           const isHidden = seeMoreOptions.classList.contains("hidden");
-          
-          // Toggle visibility
           seeMoreOptions.classList.toggle("hidden");
-          
+
           // Handle opacity transition
           if (!isHidden) {
             seeMoreOptions.style.opacity = "0";
@@ -245,12 +264,12 @@ export function EventInfoWindow({
               seeMoreOptions.style.opacity = "1";
             }, 10);
           }
-          
-          // Update chevron and animation
+
+          // Swap chevron icons
           chevronIcon.innerHTML = isHidden ? chevronUpSvg : chevronDownSvg;
-          chevronIcon.style.filter = isHidden ? 
-            'drop-shadow(0 0 5px rgba(255, 107, 0, 0.8))' : 
-            'none';
+          chevronIcon.style.filter = isHidden
+            ? 'drop-shadow(0 0 5px rgba(255, 107, 0, 0.8))'
+            : 'none';
           chevronIcon.style.transition = 'transform 0.3s ease, filter 0.3s ease';
           chevronIcon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0)';
         });
@@ -268,7 +287,7 @@ export function EventInfoWindow({
         });
       }
 
-      // Navigation button handlers 
+      // Navigation button handlers
       if (hasMultipleEvents) {
         const prevButton = document.getElementById("prevEventButton");
         const nextButton = document.getElementById("nextEventButton");
@@ -298,7 +317,19 @@ export function EventInfoWindow({
     return () => {
       infoWindow.close();
     };
-  }, [event, map, position, artist, venue, currentEventIndex, hasMultipleEvents, allVenueEvents, onClose, onEventChange]);
+  }, [
+    event,
+    map,
+    position,
+    artist,
+    venue,
+    currentEventIndex,
+    hasMultipleEvents,
+    allVenueEvents,
+    onClose,
+    onEventChange,
+    shouldShowEventName
+  ]);
 
   return null;
 }

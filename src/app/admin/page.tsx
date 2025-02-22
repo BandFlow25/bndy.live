@@ -22,11 +22,13 @@ export default function AdminPage() {
       </div>
       
       <Tabs defaultValue="venues">
-        <TabsList>
-          <TabsTrigger value="venues">Venues</TabsTrigger>
-          <TabsTrigger value="artists">Artists</TabsTrigger>
-          <TabsTrigger value="events">Events</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="whitespace-nowrap">
+            <TabsTrigger value="venues">Venues</TabsTrigger>
+            <TabsTrigger value="artists">Artists</TabsTrigger>
+            <TabsTrigger value="events">Events</TabsTrigger>
+          </TabsList>
+        </div>
         
         <TabsContent value="venues">
           <VenuesTable />

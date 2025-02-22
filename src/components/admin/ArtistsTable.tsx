@@ -36,6 +36,7 @@ export function ArtistsTable() {
   const [editData, setEditData] = useState<Partial<Artist>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     loadArtists();
@@ -50,7 +51,6 @@ export function ArtistsTable() {
         ...doc.data()
       })) as Artist[];
 
-      // Sort artists alphabetically by name
       const sortedArtists = artistData.sort((a, b) =>
         a.name.toLowerCase().localeCompare(b.name.toLowerCase())
       );
@@ -77,7 +77,7 @@ export function ArtistsTable() {
         updatedAt: new Date().toISOString()
       });
       setEditingId(null);
-      loadArtists(); // This will re-sort the list
+      loadArtists();
     } catch (error) {
       console.error('Error updating artist:', error);
     } finally {
@@ -90,15 +90,29 @@ export function ArtistsTable() {
     try {
       await deleteDoc(doc(db, COLLECTIONS.ARTISTS, id));
       setDeleteConfirm(null);
-      loadArtists(); // This will re-sort the list
+      loadArtists();
     } catch (error) {
       console.error('Error deleting artist:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Filter artists based on search query
+  const filteredArtists = artists.filter(artist =>
+    artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (artist.genres && artist.genres.join(", ").toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
     <div>
+      <Input
+        type="text"
+        placeholder="Search artists..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="mb-4"
+      />
       <Table>
         <TableHeader>
           <TableRow>
@@ -109,7 +123,7 @@ export function ArtistsTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {artists.map((artist, index) => (
+          {filteredArtists.map((artist, index) => (
             <TableRow key={artist.id || `artist-${index}`}>
               <TableCell>
                 {editingId === artist.id ? (
@@ -125,10 +139,12 @@ export function ArtistsTable() {
                 {editingId === artist.id ? (
                   <Input
                     value={editData.genres?.join(', ') || ''}
-                    onChange={(e) => setEditData({
-                      ...editData,
-                      genres: e.target.value.split(',').map(g => g.trim())
-                    })}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        genres: e.target.value.split(',').map(g => g.trim())
+                      })
+                    }
                     placeholder="Comma-separated genres"
                   />
                 ) : (

@@ -11,9 +11,6 @@ import { checkEventConflicts } from '@/lib/services/event-service';
 import { stringSimilarity } from '@/lib/utils/string-utils';
 import type { Artist, Venue } from '@/lib/types';
 
-interface WebScraperImporterProps {
-  map: google.maps.Map;
-}
 
 interface ScrapedEvent {
   id: string;
@@ -60,34 +57,18 @@ interface ScrapedEvent {
   error?: string;
 }
 
-export function WebScraperImporter() {
+
+  // Initialize hidden map for Google Places API
+  export function WebScraperImporter() {
   const [url, setUrl] = useState('https://www.gigs-news.uk/');
   const [events, setEvents] = useState<ScrapedEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const [map, setMap] = useState<google.maps.Map | null>(null);
 
-  // Initialize hidden map for Google Places API
-  useEffect(() => {
-    const mapDiv = document.createElement('div');
-    mapDiv.style.display = 'none';
-    document.body.appendChild(mapDiv);
-    
-    const newMap = new google.maps.Map(mapDiv, {
-      center: { lat: 53.002668, lng: -2.179404 }, // Stoke-on-Trent
-      zoom: 12
-    });
-    
-    setMap(newMap);
-    
-    return () => {
-      document.body.removeChild(mapDiv);
-    };
-  }, []);
-
+  // Remove the map state and useEffect since we're getting map as a prop now
+  
   const scrapeEvents = async () => {
-    if (!map) return;
-
+   
     setLoading(true);
     try {
       const response = await fetch('/api/scrape-events', {
@@ -123,7 +104,7 @@ export function WebScraperImporter() {
   };
 
   const processEvent = async (event: ScrapedEvent) => {
-    if (!map) return;
+   
 
     try {
       // Update status to processing
@@ -134,7 +115,7 @@ export function WebScraperImporter() {
       );
 
       // Search for venue matches using both name and Facebook URL
-      const venueResults = await searchVenues(event.venue.name, map);
+      const venueResults = await searchVenues(event.venue.name);
       let bestVenueMatch: Venue | null = null;
       let bestVenueConfidence = 0;
 
