@@ -3,7 +3,7 @@ import './globals.css';
 import { Header } from '@/components/Header';
 import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { useEffect } from 'react';
+import { ViewportFix } from '@/components/ViewportFix';
 
 const geist = Geist({
   subsets: ['latin'],
@@ -31,22 +31,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  useEffect(() => {
-    const fixViewportHeight = () => {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-    };
-
-    fixViewportHeight();
-    window.addEventListener('resize', fixViewportHeight);
-    window.addEventListener('orientationchange', fixViewportHeight);
-    
-    return () => {
-      window.removeEventListener('resize', fixViewportHeight);
-      window.removeEventListener('orientationchange', fixViewportHeight);
-    };
-  }, []);
-
   return (
     <html lang="en" className={geist.className}>
       <head>
@@ -56,6 +40,7 @@ export default function RootLayout({
       </head>
       <body>
         <ErrorBoundary>
+          <ViewportFix />
           <Header />
           <main className="pt-[72px] flex flex-col min-h-screen safari-height">
             {children}
