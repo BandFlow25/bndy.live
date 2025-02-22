@@ -17,7 +17,7 @@
 
 /* iOS-specific map container fixes */
 .map-container {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -26,14 +26,9 @@
   width: 100%;
   overflow: hidden;
   z-index: 0;
-  /* Force hardware acceleration */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  /* Prevent elastic scrolling on iOS */
   -webkit-overflow-scrolling: touch;
 }
+
 .overflow-y-auto {
   -webkit-overflow-scrolling: touch;
   padding-bottom: env(safe-area-inset-bottom);
@@ -41,12 +36,10 @@
 
 /* Prevent unwanted scrolling/bouncing on iOS */
 html, body {
-  position: fixed;
-  width: 100%;
   height: 100%;
+  width: 100%;
   overflow: hidden;
-  touch-action: none;
-  -webkit-overflow-scrolling: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 @layer base {
