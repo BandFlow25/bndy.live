@@ -128,9 +128,11 @@ function MapComponent({
     <>
       <div 
         ref={ref} 
-        className={`map-container ${className || ''}`}
+        className="absolute inset-0 w-full h-full"
         style={{
-          visibility: map ? 'visible' : 'hidden' // Hide until map is ready
+          position: 'sticky',
+          top: 0,
+          zIndex: 0,
         }}
       />
       {map && children?.(map)}
@@ -411,13 +413,12 @@ export function MapView({ onEventSelect, userLocation, onMapLoad, dateRange }: M
   }
 
   return (
-    <div className="relative safari-height">
+    <div className="fixed inset-0 w-full overflow-hidden bg-[#242a38]">
       <GoogleMapsWrapper apiKey={apiKey}>
-        <MapComponent
-          center={center}
-          zoom={zoom}
+        <MapComponent 
+          center={center} 
+          zoom={zoom} 
           onMapLoad={handleMapLoad}
-          className="safari-height"
         >
           {(map) => (
             <>

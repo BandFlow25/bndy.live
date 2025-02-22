@@ -42,7 +42,7 @@ export default function RootLayout({
         <ErrorBoundary>
           <ViewportFix />
           <Header />
-          <main className="pt-[72px] flex flex-col min-h-screen safari-height">
+          <main className="relative w-full h-full overflow-hidden">
             {children}
           </main>
           <Toaster />

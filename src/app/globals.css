@@ -43,56 +43,51 @@
    2. iOS/Safari Specific Fixes
    ========================================= */
 @supports (-webkit-touch-callout: none) {
+  /* iOS viewport height fixes */
   .safari-height {
     height: 100vh !important;
+    height: -webkit-fill-available;
     -webkit-overflow-scrolling: auto;
   }
 
   .safari-modal {
     position: absolute !important;
     min-height: 100vh !important;
+    min-height: -webkit-fill-available;
     -webkit-overflow-scrolling: touch;
   }
 
-  .map-container {
+  .fixed {
+    position: sticky;
+    top: 0;
+    height: 100vh;
     height: -webkit-fill-available;
-    position: fixed;
-  }
-
-  .min-h-screen {
-    min-height: -webkit-fill-available;
   }
 }
 
 /* Base layout styles */
 html, body {
+  overflow: hidden;
+  position: relative;
   height: 100%;
-  width: 100%;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 /* =========================================
    3. Map Container Styles
    ========================================= */
-   .map-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 0;
-    -webkit-overflow-scrolling: touch;
-    background: #242a38;
-    /* Force hardware acceleration */
-    transform: translate3d(0,0,0);
-    -webkit-transform: translate3d(0,0,0);
-    /* Prevent elastic scrolling */
-    overscroll-behavior: none;
-  }
+.map-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  -webkit-overflow-scrolling: touch;
+  background: #242a38;
+  transform: translate3d(0,0,0);
+  -webkit-transform: translate3d(0,0,0);
+  overscroll-behavior: none;
+}
 
 /* =========================================
    4. Component Styles
