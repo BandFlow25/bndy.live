@@ -30,13 +30,13 @@ interface SidebarProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function Sidebar({ 
-  events, 
-  filters, 
-  onFilterChange, 
+export function Sidebar({
+  events,
+  filters,
+  onFilterChange,
   onEventSelect,
-  isOpen, 
-  onOpenChange 
+  isOpen,
+  onOpenChange
 }: SidebarProps) {
   const handleInputChange = useCallback(
     (key: keyof EventFilters, value: string) => {
@@ -68,7 +68,10 @@ export function Sidebar({
         </Button>
       </SheetTrigger>
 
-      <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-background/95 backdrop-blur-sm">
+      <SheetContent 
+  side="left" 
+  className="w-[400px] sm:w-[540px] bg-background/95 backdrop-blur-sm safari-modal"
+>
         <SheetTitle>Find Events</SheetTitle>
         <div className="mt-6 space-y-6">
           <div className="relative">
@@ -80,8 +83,8 @@ export function Sidebar({
             />
           </div>
 
-          <Select 
-            value={filters.dateFilter} 
+          <Select
+            value={filters.dateFilter}
             onValueChange={(value) => handleInputChange("dateFilter", value)}
           >
             <SelectTrigger className="form-select">
@@ -104,8 +107,8 @@ export function Sidebar({
             className="form-input"
           />
 
-          <Select 
-            value={filters.ticketType} 
+          <Select
+            value={filters.ticketType}
             onValueChange={(value) => handleInputChange("ticketType", value)}
           >
             <SelectTrigger className="form-select">

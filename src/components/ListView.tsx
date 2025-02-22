@@ -94,7 +94,7 @@ export default function ListView() {
   });
 
   return (
-    <div className="container mx-auto px-4 pt-[96px] pb-20 max-w-6xl overflow-y-auto h-screen">
+    <div className="container mx-auto px-4 pt-[96px] pb-20 overflow-y-auto safari-height">
       <div className="mb-6">
         <div className="relative">
           <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />

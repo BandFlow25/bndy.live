@@ -25,7 +25,7 @@ const isIOS = () => {
     'iPhone',
     'iPod'
   ].includes(navigator.platform)
-  || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+    || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 };
 
 
@@ -33,12 +33,14 @@ function MapComponent({
   center,
   zoom,
   onMapLoad,
-  children
+  children,
+  className  // Add this prop
 }: {
   center: google.maps.LatLngLiteral;
   zoom: number;
   onMapLoad?: (map: google.maps.Map) => void;
   children?: (map: google.maps.Map) => React.ReactNode;
+  className?: string;  // Add this to the interface
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map>();
@@ -85,21 +87,10 @@ function MapComponent({
 
   return (
     <>
-      <div 
-  ref={ref} 
-  style={{ 
-    width: '100%', 
-    height: '100vh', 
-    background: '#242a38',
-    // Add these Safari-specific fixes:
-    minHeight: '-webkit-fill-available',
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0
-  }} 
-/>
+      <div
+        ref={ref}
+        className="map-container safari-height"
+      />
       {map && children?.(map)}
     </>
   );
@@ -141,7 +132,7 @@ function ClusteredMarkers({
     // Create markers with optimized settings
     const markers = Object.entries(eventsByLocation).map(([locationKey, locationEvents]) => {
       const [lat, lng] = locationKey.split(',').map(Number);
-      
+
       const marker = new google.maps.Marker({
         position: { lat, lng },
         optimized: true,
@@ -350,13 +341,13 @@ export function MapView({ onEventSelect, userLocation, onMapLoad, dateRange }: M
 
   const handleMarkerClick = useCallback((event: Event, venueEvents?: Event[]) => {
     if (!mapInstance) return;
-  
+
     // Move map down slightly to ensure info window visibility
     const newCenter = {
       lat: event.location.lat - 0.002, // Adjust value based on zoom level
       lng: event.location.lng
     };
-  
+
     mapInstance.panTo(newCenter);
     setSelectedEvent(event);
     setVenueEvents(venueEvents || []);
@@ -378,9 +369,14 @@ export function MapView({ onEventSelect, userLocation, onMapLoad, dateRange }: M
   }
 
   return (
-    <div className="relative">
+    <div className="relative safari-height">
       <GoogleMapsWrapper apiKey={apiKey}>
-        <MapComponent center={center} zoom={zoom} onMapLoad={handleMapLoad}>
+        <MapComponent
+          center={center}
+          zoom={zoom}
+          onMapLoad={handleMapLoad}
+          className="safari-height"
+        >
           {(map) => (
             <>
               <ClusteredMarkers
@@ -389,17 +385,17 @@ export function MapView({ onEventSelect, userLocation, onMapLoad, dateRange }: M
                 onMarkerClick={handleMarkerClick}
               />
               {selectedEvent && mapInstance && (
-               <EventInfoWindow
-                 event={selectedEvent}
-                 allVenueEvents={venueEvents}
-                 map={mapInstance}
-                 onClose={handleInfoWindowClose}
-                 onEventChange={(newEvent) => {
-                   setSelectedEvent(newEvent);
-                   onEventSelect(newEvent);
-                 }}
-                 position={selectedEvent.location}
-               />
+                <EventInfoWindow
+                  event={selectedEvent}
+                  allVenueEvents={venueEvents}
+                  map={mapInstance}
+                  onClose={handleInfoWindowClose}
+                  onEventChange={(newEvent) => {
+                    setSelectedEvent(newEvent);
+                    onEventSelect(newEvent);
+                  }}
+                  position={selectedEvent.location}
+                />
               )}
             </>
           )}

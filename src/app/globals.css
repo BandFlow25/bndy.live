@@ -1,47 +1,10 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@supports (-webkit-touch-callout: none) {
-  .min-h-screen {
-    /* Fix for iOS 100vh issue */
-    min-height: -webkit-fill-available;
-  }
-  
-  .h-screen {
-    /* Fix for iOS 100vh issue */
-    height: -webkit-fill-available;
-  }
-}
-
-/* iOS-specific map container fixes */
-.map-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  z-index: 0;
-  -webkit-overflow-scrolling: touch;
-}
-
-.overflow-y-auto {
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Prevent unwanted scrolling/bouncing on iOS */
-html, body {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  -webkit-overflow-scrolling: touch;
-}
-
+/* =========================================
+   1. Root Variables & Base Styles
+   ========================================= */
 @layer base {
   :root {
     --background: 222 47% 11%;
@@ -65,42 +28,82 @@ html, body {
     --ring: 24 95% 53%;
     --radius: 1.5rem;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
+/* =========================================
+   2. iOS/Safari Specific Fixes
+   ========================================= */
+@supports (-webkit-touch-callout: none) {
+  .safari-height {
+    height: 100vh !important;
+    -webkit-overflow-scrolling: auto;
+  }
+
+  .safari-modal {
+    position: absolute !important;
+    min-height: 100vh !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Base layout styles */
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================================
+   3. Map Container Styles
+   ========================================= */
+.map-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  z-index: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================================
+   4. Component Styles
+   ========================================= */
 @layer components {
+  /* Scroll handling */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Animation classes */
   .animate-fade-in {
     animation: fadeIn 1s ease-in;
   }
 
+  /* Navigation elements */
   .back-to-map {
     @apply inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors;
   }
 
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-
-
-
-
+  /* Logo styling */
   .logo-text {
     @apply relative inline-flex items-center;
     text-shadow: 0 0 10px var(--primary);
@@ -112,52 +115,44 @@ html, body {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 0.5;
-    }
-    50% {
-      opacity: 0.1;
-    }
-  }
-
-  /* === Sidebar Styling === */
+  /* Sidebar components */
   .side-panel {
     @apply fixed z-50 bg-background/95 backdrop-blur-sm border-border shadow-lg;
     transition: transform 300ms ease-in-out;
   }
 
-  /* Sidebar Slide Animations */
-  .side-panel-left {
-    transform: translateX(-100%);
-  }
+  .side-panel-left { transform: translateX(-100%); }
+  .side-panel-right { transform: translateX(100%); }
+  .side-panel-open { transform: translateX(0); }
 
-  .side-panel-right {
-    transform: translateX(100%);
-  }
-
-  .side-panel-open {
-    transform: translateX(0);
-  }
-
-  /* === Form Control Styling === */
+  /* Form elements */
   .form-input, .form-select {
     @apply w-full rounded-md border border-input bg-background px-3 py-2;
     @apply text-sm focus-visible:ring-2 focus-visible:ring-ring;
     @apply transition-colors duration-200;
   }
 
-  /* === Select Item Hover Effect === */
+  /* List items */
   .gig-list-item {
     @apply bg-muted/50 hover:bg-muted transition-colors duration-200;
   }
 }
 
-@layer utilities {
-  @supports (-webkit-touch-callout: none) {
-    .min-h-screen {
-      min-height: -webkit-fill-available;
-    }
+/* =========================================
+   5. Animations
+   ========================================= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.1; }
 }

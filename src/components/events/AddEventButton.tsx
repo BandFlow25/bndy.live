@@ -30,15 +30,10 @@ export function AddEventButton({ map }: AddEventButtonProps) {
           Add Event
         </Button>
       </SheetTrigger>
-      <SheetContent
-        side="left"
-        className="w-[400px] sm:w-[540px] bg-background/95 backdrop-blur-sm"
-        style={{
-          position: 'fixed',
-          height: '100%',
-          minHeight: '-webkit-fill-available'
-        }}
-      >
+      <SheetContent 
+  side="left" 
+  className="w-[400px] sm:w-[540px] bg-background/95 backdrop-blur-sm safari-modal"
+>
         <VisuallyHidden>
           <SheetHeader>
             <SheetTitle>Create New Event</SheetTitle>

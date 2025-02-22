@@ -3,6 +3,7 @@ import './globals.css';
 import { Header } from '@/components/Header';
 import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useEffect } from 'react';
 
 const geist = Geist({
   subsets: ['latin'],
@@ -16,12 +17,13 @@ export const viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: '#242a38',
+  viewportFit: 'cover'
 }
 
 export const metadata = {
   title: 'Bndy - Live Music Events',
   description: 'Discover live music events near you',
-  manifest: '/site.webmanifest', // Using the standard filename
+  manifest: '/site.webmanifest',
 };
 
 export default function RootLayout({
@@ -29,25 +31,33 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    const fixViewportHeight = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    fixViewportHeight();
+    window.addEventListener('resize', fixViewportHeight);
+    window.addEventListener('orientationchange', fixViewportHeight);
+    
+    return () => {
+      window.removeEventListener('resize', fixViewportHeight);
+      window.removeEventListener('orientationchange', fixViewportHeight);
+    };
+  }, []);
+
   return (
     <html lang="en" className={geist.className}>
       <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover, minimum-scale=1, maximum-scale=1, user-scalable=no"
-        />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="format-detection" content="telephone=no" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-
       </head>
       <body>
         <ErrorBoundary>
           <Header />
-          <main className="pt-[72px] flex flex-col min-h-screen">
-
-
+          <main className="pt-[72px] flex flex-col min-h-screen safari-height">
             {children}
           </main>
           <Toaster />
