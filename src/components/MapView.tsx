@@ -15,6 +15,20 @@ interface MapViewProps {
   dateRange?: { startDate: string; endDate: string };
 }
 
+
+const isIOS = () => {
+  return [
+    'iPad Simulator',
+    'iPhone Simulator',
+    'iPod Simulator',
+    'iPad',
+    'iPhone',
+    'iPod'
+  ].includes(navigator.platform)
+  || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+};
+
+
 function MapComponent({
   center,
   zoom,
@@ -71,7 +85,21 @@ function MapComponent({
 
   return (
     <>
-      <div ref={ref} style={{ width: '100%', height: '100vh', background: '#242a38' }} />
+      <div 
+  ref={ref} 
+  style={{ 
+    width: '100%', 
+    height: '100vh', 
+    background: '#242a38',
+    // Add these Safari-specific fixes:
+    minHeight: '-webkit-fill-available',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0
+  }} 
+/>
       {map && children?.(map)}
     </>
   );
@@ -304,6 +332,21 @@ export function MapView({ onEventSelect, userLocation, onMapLoad, dateRange }: M
       };
     }
   }, [mapInstance, dateRange]);
+
+  // iOS fix attempt
+  useEffect(() => {
+    if (isIOS()) {
+      // Force a resize event after a short delay
+      setTimeout(() => {
+        if (mapInstance) {
+          google.maps.event.trigger(mapInstance, 'resize');
+          if (center) {
+            mapInstance.setCenter(center);
+          }
+        }
+      }, 100);
+    }
+  }, [mapInstance, center]);
 
   const handleMarkerClick = useCallback((event: Event, venueEvents?: Event[]) => {
     if (!mapInstance) return;
