@@ -54,6 +54,11 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  .map-container {
+    height: -webkit-fill-available;
+    position: fixed;
+  }
+
   .min-h-screen {
     min-height: -webkit-fill-available;
   }
@@ -70,18 +75,24 @@ html, body {
 /* =========================================
    3. Map Container Styles
    ========================================= */
-.map-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  z-index: 0;
-  -webkit-overflow-scrolling: touch;
-}
+   .map-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+    -webkit-overflow-scrolling: touch;
+    background: #242a38;
+    /* Force hardware acceleration */
+    transform: translate3d(0,0,0);
+    -webkit-transform: translate3d(0,0,0);
+    /* Prevent elastic scrolling */
+    overscroll-behavior: none;
+  }
 
 /* =========================================
    4. Component Styles

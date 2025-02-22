@@ -17,15 +17,21 @@ interface MapViewProps {
 
 
 const isIOS = () => {
-  return [
+  // Get iOS version if possible
+  const iOSMatch = navigator.userAgent.match(/OS (\d+)_/);
+  const iOSVersion = iOSMatch ? parseInt(iOSMatch[1], 10) : 0;
+  
+  const isIOSDevice = [
     'iPad Simulator',
     'iPhone Simulator',
     'iPod Simulator',
     'iPad',
     'iPhone',
     'iPod'
-  ].includes(navigator.platform)
-    || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+  ].includes(navigator.platform) || 
+  (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+
+  return { isIOSDevice, version: iOSVersion };
 };
 
 
@@ -34,62 +40,98 @@ function MapComponent({
   zoom,
   onMapLoad,
   children,
-  className  // Add this prop
+  className
 }: {
   center: google.maps.LatLngLiteral;
   zoom: number;
   onMapLoad?: (map: google.maps.Map) => void;
   children?: (map: google.maps.Map) => React.ReactNode;
-  className?: string;  // Add this to the interface
+  className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map>();
+  const { isIOSDevice, version } = isIOS();
 
   useEffect(() => {
     if (ref.current && !map) {
-      const mapInstance = new window.google.maps.Map(ref.current, {
-        center,
-        zoom,
-        gestureHandling: 'greedy',
-        clickableIcons: false,
-        // Improve mobile performance
-        maxZoom: 18,
-        minZoom: 3,
-        zoomControl: true,
-        mapTypeControl: false,
-        scaleControl: true,
-        streetViewControl: false,
-        rotateControl: false,
-        fullscreenControl: false,
-        // Optimize for mobile
-        tilt: 0,
-        styles: [
-          { featureType: "all", elementType: "all", stylers: [{ hue: "#242a38" }] },
-          { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-          { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
-          { featureType: "road", elementType: "labels", stylers: [{ visibility: "on" }] },
-          { featureType: "administrative", elementType: "labels", stylers: [{ visibility: "on" }] },
-          { featureType: "poi.business", elementType: "all", stylers: [{ visibility: "off" }] }
-        ]
-      });
+      // Create a wrapper div for iOS fix
+      const mapContainer = isIOSDevice && version < 15 ? 
+        document.createElement('div') : 
+        ref.current;
 
-      setMap(mapInstance);
-      if (onMapLoad) onMapLoad(mapInstance);
+      if (isIOSDevice && version < 15) {
+        mapContainer.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          height: 100%;
+        `;
+        ref.current.appendChild(mapContainer);
+      }
+
+      // Add slight delay for older iOS versions
+      const initMap = () => {
+        const mapInstance = new window.google.maps.Map(mapContainer, {
+          center,
+          zoom,
+          gestureHandling: 'greedy',
+          clickableIcons: false,
+          maxZoom: 18,
+          minZoom: 3,
+          zoomControl: true,
+          mapTypeControl: false,
+          scaleControl: true,
+          streetViewControl: false,
+          rotateControl: false,
+          fullscreenControl: false,
+          tilt: 0,
+          styles: [
+            { featureType: "all", elementType: "all", stylers: [{ hue: "#242a38" }] },
+            { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+            { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
+            { featureType: "road", elementType: "labels", stylers: [{ visibility: "on" }] },
+            { featureType: "administrative", elementType: "labels", stylers: [{ visibility: "on" }] },
+            { featureType: "poi.business", elementType: "all", stylers: [{ visibility: "off" }] }
+          ]
+        });
+
+        setMap(mapInstance);
+        if (onMapLoad) onMapLoad(mapInstance);
+      };
+
+      if (isIOSDevice && version < 15) {
+        // Add delay for older iOS
+        setTimeout(initMap, 100);
+      } else {
+        initMap();
+      }
     }
   }, [ref, map, center, zoom, onMapLoad]);
 
+  // Force map resize/recenter after initial render on iOS
   useEffect(() => {
-    if (map) {
-      map.setCenter(center);
-      map.setZoom(zoom);
+    const { isIOSDevice, version } = isIOS();
+    if (isIOSDevice && version < 15 && map) {
+      const resizeTimer = setTimeout(() => {
+        google.maps.event.trigger(map, 'resize');
+        map.setCenter(center);
+      }, 300);
+
+      return () => clearTimeout(resizeTimer);
     }
-  }, [map, center, zoom]);
+  }, [map, center]);
 
   return (
     <>
-      <div
-        ref={ref}
-        className="map-container safari-height"
+      <div 
+        ref={ref} 
+        className={`map-container ${className || ''}`}
+        style={{
+          visibility: map ? 'visible' : 'hidden' // Hide until map is ready
+        }}
       />
       {map && children?.(map)}
     </>
